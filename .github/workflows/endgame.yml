@@ -1,0 +1,73 @@
+name: ASHEM endgame guard
+
+# Runs the public endgame script every 6 hours. At most ONE state-machine
+# action per run; every decision and signature is committed back to state/
+# so the entire history is auditable in this repo's git log.
+#
+# Key custody (see README): the authority keypair exists ONLY as a GitHub
+# Actions secret and only for the duration of a run. Worst case if leaked:
+# divert withheld fees, or schedule a fee change that is visible on-chain
+# ~2 epochs before applying. It cannot mint, freeze, or touch LP, and the
+# script destroys both authorities at the end (endgame.sh lines 114/118).
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: endgame
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  endgame:
+    runs-on: ubuntu-latest
+    env:
+      ASHEM_MINT: ${{ vars.ASHEM_MINT }}
+      ASHEM_VAULT: ${{ vars.ASHEM_VAULT }}
+      ASHEM_RPC_URL: ${{ vars.ASHEM_RPC_URL }}
+    steps:
+      - name: Skip cleanly if repo vars are not configured yet
+        id: cfg
+        run: |
+          if [ -z "$ASHEM_MINT" ] || [ -z "$ASHEM_VAULT" ] || [ -z "$ASHEM_RPC_URL" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "ASHEM_MINT / ASHEM_VAULT / ASHEM_RPC_URL not set - skipping."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.cfg.outputs.configured == 'true'
+        uses: actions/checkout@v4
+
+      - name: Install Solana CLI (pinned to the locally tested version)
+        if: steps.cfg.outputs.configured == 'true'
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v4.0.2/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+
+      - name: Configure wallet from secret (exists only during this run)
+        if: steps.cfg.outputs.configured == 'true'
+        env:
+          KEYPAIR_JSON: ${{ secrets.ASHEM_AUTHORITY_KEYPAIR }}
+        run: |
+          umask 077
+          printf '%s' "$KEYPAIR_JSON" > "$RUNNER_TEMP/authority.json"
+          solana config set --url "$ASHEM_RPC_URL" --keypair "$RUNNER_TEMP/authority.json"
+
+      - name: Run endgame state machine (one action max)
+        if: steps.cfg.outputs.configured == 'true'
+        run: bash scripts/endgame.sh
+
+      - name: Commit public state back to the repo
+        if: steps.cfg.outputs.configured == 'true'
+        run: |
+          git config user.name "ashem-endgame-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A state
+          git add ENDGAME.md 2>/dev/null || true
+          git diff --cached --quiet || { git commit -m "endgame: run $(date -u +%FT%TZ)"; git push; }

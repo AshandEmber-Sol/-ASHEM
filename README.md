@@ -31,3 +31,14 @@ IDLE -> SET_FEE_ZERO -> WAIT_SWITCHOVER -> FINAL_HARVEST_BURN -> REVOKE_WITHDRAW
 ### Custodia de la llave (decision)
 
 GitHub Actions secret (opcion a). Razones: el workflow es auditable linea por linea (coherente con "legibilidad como feature"); el radio de dano de la llave es acotado y publico (no mintea, no congela, no toca LP; peor caso = desviar fees retenidos o programar un cambio de fee visible on-chain ~2 epocas antes de aplicar); y la llave tiene fecha de muerte programada en REVOKE_WITHDRAW/REVOKE_FEE_CONFIG. Un entorno de firma separado (opcion b) protege mas la llave pero rompe la legibilidad para auditores externos, que es el activo del proyecto.
+
+### Automatizacion (GitHub Actions)
+
+`.github/workflows/endgame.yml` ejecuta `scripts/endgame.sh` cada 6 horas (y a demanda con workflow_dispatch):
+
+- Configuracion requerida en Settings del repo:
+  - Variables publicas: `ASHEM_MINT`, `ASHEM_VAULT`, `ASHEM_RPC_URL`
+  - Secret: `ASHEM_AUTHORITY_KEYPAIR` (JSON del keypair de la authority; ver "Custodia de la llave")
+- Mientras las variables no existan, el workflow se salta la ejecucion con exit limpio (se puede commitear antes de configurar la red).
+- Cada run committea `state/` (historial de supply + log de decisiones y firmas) de vuelta al repo: la auditoria completa vive en el historial de git.
+- CLI de Solana pineada a la version probada en los tests locales (v4.0.2).
