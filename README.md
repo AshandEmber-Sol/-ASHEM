@@ -61,3 +61,5 @@ Estados de la maquina: `IDLE -> HARVEST_SPLIT -> SET_FEE_ZERO -> WAIT_SWITCHOVER
 **Requisito de RPC:** el paso de harvest usa `getProgramAccounts` para enumerar las cuentas con fees retenidos. Los RPC publicos (devnet y mainnet) bloquean esa consulta sobre el programa Token-2022, asi que se requiere un RPC indexador (p. ej. Helius) en la variable `ASHEM_INDEXER_RPC` (secret). El resto de operaciones usan el RPC normal (`ASHEM_RPC_URL`).
 
 Config requerida adicional en Settings del repo: variable publica `ASHEM_DEV_WALLET` y secret `ASHEM_INDEXER_RPC`.
+
+**CRITICO — la wallet de vault:** `ASHEM_VAULT` debe ser una cuenta de token DEDICADA y vacia al inicio, usada SOLO para recolectar fees. NUNCA debe ser la tesoreria ni ninguna cuenta con saldo real: el harvest+split parte todo el saldo del vault. Como salvaguarda, el script aborta sin mover nada si un solo harvest moveria mas del 10% del supply (probable misconfiguracion).

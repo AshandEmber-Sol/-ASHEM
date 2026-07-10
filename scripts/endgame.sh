@@ -83,6 +83,7 @@ do_split() {
     vraw="$(acct_raw "$VAULT")"
     if [[ "${vraw:-0}" -eq 0 ]]; then log "$ctx nothing to split (vault empty)"; return 0; fi
     total="$vraw"; dev_cut=$(( total / 3 )); burn_cut=$(( total - dev_cut ))
+    if (( total > SUPPLY * UNIT / 10 )); then log "ABORT: $ctx total=$total exceeds 10% of supply - the vault must be a DEDICATED fee-only account, never the treasury. No tokens moved."; exit 1; fi
     printf '%s %s %s\n' "$total" "$dev_cut" "$burn_cut" > "$INFLIGHT"
     log "$ctx planned total=$total burn_cut=$burn_cut dev_cut=$dev_cut (rounding favors burn)"
   fi
