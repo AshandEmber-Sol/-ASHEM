@@ -28,8 +28,8 @@ Principio de diseno respetado: cero programas on-chain custom, cero Anchor. Todo
 
 | Elemento | Direccion |
 |---|---|
-| Mint | 89KufUbTkTJkLRtGQAX8EWdWBYDBR9KSxHypGgEXoLY7 |
-| Tesoreria (ATA) | F383MSXa1CjXdphMNf8pPPspbU4H9FQ4KQATw2KeBJzK |
+| Mint | H6cpRwEW8AxQwfWnP4iun2jWgCP2Smdn2zprMFtHuvUu |
+| Tesoreria (ATA) | 8Z1YyMmHHUMmtGCutNFhwqvSgGCWfy7tXsRBeuaYPeZz |
 | Wallet de autoridades (devnet) | DFPuDWketoZJqeuHkWL2Ev7JM76ism1FXTjWnK4VVhaV |
 
 Estado leido on-chain: supply 1B, fee 150bps, cap 100k, mint/freeze authority not set, config + withdraw authority en la wallet dedicada, withheld 0.
