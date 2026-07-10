@@ -34,6 +34,14 @@ NOTA: estas lineas cambiaron respecto a las 114/118 del entregable anterior — 
 
 El harvest necesita `getProgramAccounts` para enumerar las cuentas con fees retenidos, y los RPC publicos (devnet y mainnet) BLOQUEAN esa consulta sobre Token-2022. Se requiere un RPC indexador (tipo Helius) como secret (`ASHEM_INDEXER_RPC`). Es una dependencia y un costo nuevos para mainnet.
 
+## Salvaguarda: circuit breaker (imposible drenar el token por error)
+
+El harvest+split continuo parte el saldo del vault. Para blindar contra una config erronea (vault apuntando a la tesoreria) o alguien enviando tokens al vault, el script tiene un fusible: aborta sin mover NI UN token si un solo harvest moveria mas del 10% del supply. Los fees reales por ciclo son minusculos; cualquier monto anormal = probable error, y el script no hace nada.
+
+Esto se detecto y corrigio probando en devnet: la primera corrida del workflow tenia el vault mal configurado (apuntaba a la tesoreria con 1B) y el split partio todo el saldo. Solo devnet, sin valor. El fusible ya cubre ese caso: verificado que con la misma config catastrofica, aborta y deja supply y tesoreria intactos.
+
+Frase citable: "el mecanismo no puede mover mas del 10% del supply por ciclo - es imposible drenar el token por un error de configuracion."
+
 ## Auditabilidad
 
 Cada harvest queda en `state/harvest-ledger.csv` (`ts, total, burn_cut, dev_cut, burn_sig, dev_sig`), commiteado por el bot del workflow. Cualquiera puede sumar cuanto se ha quemado vs. cuanto ha ido al dev, sin confiar en el repo.
