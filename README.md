@@ -42,3 +42,22 @@ GitHub Actions secret (opcion a). Razones: el workflow es auditable linea por li
 - Mientras las variables no existan, el workflow se salta la ejecucion con exit limpio (se puede commitear antes de configurar la red).
 - Cada run committea `state/` (historial de supply + log de decisiones y firmas) de vuelta al repo: la auditoria completa vive en el historial de git.
 - CLI de Solana pineada a la version probada en los tests locales (v4.0.2).
+
+### Fee split (1.0% quema / 0.5% dev)
+
+El transfer fee sigue siendo **1.5% total** para quien transfiere (el cap de 100,000 $ASHEM no cambia). Al hacer harvest, los fees recolectados se DIVIDEN:
+
+- **2/3 -> quema** (baja el supply hacia el piso de 300M)
+- **1/3 -> wallet de dev** (sostenimiento del proyecto, flujo transparente on-chain)
+
+Regla de redondeo (citable): `dev_cut = floor(total/3)`, el residuo va a `burn_cut`. **El redondeo SIEMPRE favorece la quema, nunca al dev.**
+
+La wallet de dev es un **destino, no una autoridad**: no firma nada, no tiene poder sobre el mint, solo recibe. No se introdujo ninguna llave nueva por el split (usa la withdraw-withheld authority existente). El transfer al dev paga el 1.5% como cualquier holder (Token-2022 no exime cuentas); el burn es fee-free, por lo que el supply baja exactamente por `burn_cut`. Cuando llega el endgame (fee 0% + llaves revocadas), el flujo al dev muere junto con la quema.
+
+El log de cada harvest queda en `state/harvest-ledger.csv` (`ts,total,burn_cut,dev_cut,burn_sig,dev_sig`), para que cualquiera pueda sumar cuánto se ha quemado vs. cuánto ha ido al dev, sin confiar en nadie.
+
+Estados de la maquina: `IDLE -> HARVEST_SPLIT -> SET_FEE_ZERO -> WAIT_SWITCHOVER -> FINAL_HARVEST_SPLIT -> REVOKE_WITHDRAW -> REVOKE_FEE_CONFIG -> PUBLISH_PROOF -> DONE`.
+
+**Requisito de RPC:** el paso de harvest usa `getProgramAccounts` para enumerar las cuentas con fees retenidos. Los RPC publicos (devnet y mainnet) bloquean esa consulta sobre el programa Token-2022, asi que se requiere un RPC indexador (p. ej. Helius) en la variable `ASHEM_INDEXER_RPC` (secret). El resto de operaciones usan el RPC normal (`ASHEM_RPC_URL`).
+
+Config requerida adicional en Settings del repo: variable publica `ASHEM_DEV_WALLET` y secret `ASHEM_INDEXER_RPC`.

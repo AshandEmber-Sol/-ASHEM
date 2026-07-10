@@ -29,11 +29,13 @@ jobs:
       ASHEM_MINT: ${{ vars.ASHEM_MINT }}
       ASHEM_VAULT: ${{ vars.ASHEM_VAULT }}
       ASHEM_RPC_URL: ${{ vars.ASHEM_RPC_URL }}
+      ASHEM_DEV_WALLET: ${{ vars.ASHEM_DEV_WALLET }}
+      ASHEM_INDEXER_RPC: ${{ secrets.ASHEM_INDEXER_RPC }}
     steps:
       - name: Skip cleanly if repo vars are not configured yet
         id: cfg
         run: |
-          if [ -z "$ASHEM_MINT" ] || [ -z "$ASHEM_VAULT" ] || [ -z "$ASHEM_RPC_URL" ]; then
+          if [ -z "$ASHEM_MINT" ] || [ -z "$ASHEM_VAULT" ] || [ -z "$ASHEM_RPC_URL" ] || [ -z "$ASHEM_DEV_WALLET" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "ASHEM_MINT / ASHEM_VAULT / ASHEM_RPC_URL not set - skipping."
           else
