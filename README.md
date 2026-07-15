@@ -1,65 +1,65 @@
 # Ash & Ember ($ASHEM)
 
-Memecoin en Solana sobre el programa Token-2022 (spl-token-2022), usando solo extensiones nativas: sin Anchor, sin contratos custom.
+Solana memecoin built on the Token-2022 program (spl-token-2022), using only native extensions — no Anchor, no custom contracts.
 
-Supply inicial 1,000,000,000 | Decimales 9 | Extension TransferFeeConfig (1.5% con tope por transaccion) | Piso de circulante 300,000,000.
+Initial supply 1,000,000,000 | Decimals 9 | TransferFeeConfig extension (1.5% with a per-transaction cap) | Circulating floor 300,000,000.
 
-Transparencia: la extension Transfer Fee NO quema tokens por si sola; solo retiene un porcentaje en cada transferencia. La quema real es un paso explicito de burn ejecutado por un script (harvest de fees, burn, y apagado automatico del fee al llegar al piso de 300M).
+Transparency: the Transfer Fee extension does NOT burn tokens by itself — it only withholds a percentage on each transfer. The actual burn is an explicit step executed by a script (fee harvest, burn, and automatic fee shutoff once the 300M floor is reached).
 
-Trabajo en progreso. La documentacion completa de comandos, scripts y la GitHub Action se ira agregando en este repositorio.
+Work in progress. Full documentation of commands, scripts, and the GitHub Action will keep being added to this repository.
 
-## Endgame automatizado (scripts/endgame.sh)
+## Automated endgame (scripts/endgame.sh)
 
-Un solo script publico ejecuta todo el ciclo de vida del mecanismo de quema,
-incluida su propia terminacion. Corre por cron (GitHub Actions). Cada run lee
-el estado REAL on-chain, deriva un estado y ejecuta como maximo UNA accion:
+A single public script runs the entire lifecycle of the burn mechanism,
+including its own termination. It runs on a cron (GitHub Actions). Each run reads
+the REAL on-chain state, derives a state, and executes at most ONE action:
 
 IDLE -> SET_FEE_ZERO -> WAIT_SWITCHOVER -> FINAL_HARVEST_BURN -> REVOKE_WITHDRAW -> REVOKE_FEE_CONFIG -> PUBLISH_PROOF -> DONE
 
-- Disparo con buffer dinamico: fee->0 se programa en supply <= 300M + (burn diario promedio 7d x 5 dias), porque el switchover de epoca (~2-4.5 dias en mainnet) deja la quema corriendo. Fallback documentado: DEFAULT_DAILY_BURN en el script mientras no haya historial.
-- Idempotente: el estado NUNCA se persiste localmente; cada run lo deriva del mint. Un run interrumpido en cualquier punto retoma sin duplicar burns ni saltarse revocaciones (probado: T4).
-- La revocacion de ambas llaves ya esta escrita en el codigo: pasos REVOKE_WITHDRAW y REVOKE_FEE_CONFIG de scripts/endgame.sh.
+- Dynamic buffer trigger: fee->0 is scheduled at supply <= 300M + (7-day average daily burn x 5 days), because the epoch switchover (~2-4.5 days on mainnet) leaves the burn still running. Documented fallback: DEFAULT_DAILY_BURN in the script while there's no history yet.
+- Idempotent: state is NEVER persisted locally; each run derives it from the mint. A run interrupted at any point resumes without duplicating burns or skipping revocations (tested: T4).
+- Revocation of both keys is already written in the code: the REVOKE_WITHDRAW and REVOKE_FEE_CONFIG steps in scripts/endgame.sh.
 
-### Resultados de pruebas en validador local (epocas de 32 slots)
+### Local validator test results (32-slot epochs)
 
-- T1: un cambio de fee programado SI se ejecuta aunque la transfer-fee-config authority se revoque durante el switchover. La revocacion solo bloquea cambios nuevos.
-- T2: harvest + burn reduce el supply exactamente por el monto retenido.
-- T3: secuencia E2E completa hasta DONE con ambas authorities en None.
-- T4: interrupcion a mitad de FINAL_HARVEST_BURN -> el siguiente run recupera desde el estado on-chain (incluye la rama vault-con-saldo-sin-withheld).
-- T5: con burn rate simulado de 8M/dia el disparo ocurrio en 300M+40M y el supply final quedo >= 300M.
+- T1: a scheduled fee change DOES execute even if the transfer-fee-config authority is revoked during the switchover. Revocation only blocks new changes.
+- T2: harvest + burn reduces supply by exactly the withheld amount.
+- T3: full E2E sequence through DONE with both authorities set to None.
+- T4: interruption mid-FINAL_HARVEST_BURN -> the next run recovers from on-chain state (covers the vault-has-balance-but-no-withheld branch).
+- T5: with a simulated burn rate of 8M/day, the trigger fired at 300M+40M and the final supply stayed >= 300M.
 
-### Custodia de la llave (decision)
+### Key custody (decision)
 
-GitHub Actions secret (opcion a). Razones: el workflow es auditable linea por linea (coherente con "legibilidad como feature"); el radio de dano de la llave es acotado y publico (no mintea, no congela, no toca LP; peor caso = desviar fees retenidos o programar un cambio de fee visible on-chain ~2 epocas antes de aplicar); y la llave tiene fecha de muerte programada en REVOKE_WITHDRAW/REVOKE_FEE_CONFIG. Un entorno de firma separado (opcion b) protege mas la llave pero rompe la legibilidad para auditores externos, que es el activo del proyecto.
+GitHub Actions secret (option a). Reasons: the workflow is auditable line by line (consistent with "readability as a feature"); the key's blast radius is bounded and public (it can't mint, can't freeze, can't touch LP; worst case = redirect withheld fees or schedule a fee change visible on-chain ~2 epochs before it takes effect); and the key has a scheduled expiration in REVOKE_WITHDRAW/REVOKE_FEE_CONFIG. A separate signing environment (option b) protects the key more but breaks the readability for external auditors, which is the project's core asset.
 
-### Automatizacion (GitHub Actions)
+### Automation (GitHub Actions)
 
-`.github/workflows/endgame.yml` ejecuta `scripts/endgame.sh` cada 6 horas (y a demanda con workflow_dispatch):
+`.github/workflows/endgame.yml` runs `scripts/endgame.sh` every 6 hours (and on demand via workflow_dispatch):
 
-- Configuracion requerida en Settings del repo:
-  - Variables publicas: `ASHEM_MINT`, `ASHEM_VAULT`, `ASHEM_RPC_URL`
-  - Secret: `ASHEM_AUTHORITY_KEYPAIR` (JSON del keypair de la authority; ver "Custodia de la llave")
-- Mientras las variables no existan, el workflow se salta la ejecucion con exit limpio (se puede commitear antes de configurar la red).
-- Cada run committea `state/` (historial de supply + log de decisiones y firmas) de vuelta al repo: la auditoria completa vive en el historial de git.
-- CLI de Solana pineada a la version probada en los tests locales (v4.0.2).
+- Required configuration in repo Settings:
+  - Public variables: `ASHEM_MINT`, `ASHEM_VAULT`, `ASHEM_RPC_URL`
+  - Secret: `ASHEM_AUTHORITY_KEYPAIR` (JSON of the authority keypair; see "Key custody")
+- While the variables don't exist yet, the workflow skips execution with a clean exit (it can be committed before the network is configured).
+- Every run commits `state/` (supply history + decision/signature log) back to the repo: the full audit trail lives in git history.
+- Solana CLI pinned to the version tested locally (v4.0.2).
 
-### Fee split (1.0% quema / 0.5% dev)
+### Fee split (1.0% burn / 0.5% dev)
 
-El transfer fee sigue siendo **1.5% total** para quien transfiere (el cap de 100,000 $ASHEM no cambia). Al hacer harvest, los fees recolectados se DIVIDEN:
+The transfer fee stays **1.5% total** for whoever transfers (the 100,000 $ASHEM cap doesn't change). On harvest, the collected fees are SPLIT:
 
-- **2/3 -> quema** (baja el supply hacia el piso de 300M)
-- **1/3 -> wallet de dev** (sostenimiento del proyecto, flujo transparente on-chain)
+- **2/3 -> burn** (lowers supply toward the 300M floor)
+- **1/3 -> dev wallet** (project sustainability, fully transparent on-chain flow)
 
-Regla de redondeo (citable): `dev_cut = floor(total/3)`, el residuo va a `burn_cut`. **El redondeo SIEMPRE favorece la quema, nunca al dev.**
+Rounding rule (quotable): `dev_cut = floor(total/3)`, the remainder goes to `burn_cut`. **Rounding ALWAYS favors the burn, never the dev.**
 
-La wallet de dev es un **destino, no una autoridad**: no firma nada, no tiene poder sobre el mint, solo recibe. No se introdujo ninguna llave nueva por el split (usa la withdraw-withheld authority existente). El transfer al dev paga el 1.5% como cualquier holder (Token-2022 no exime cuentas); el burn es fee-free, por lo que el supply baja exactamente por `burn_cut`. Cuando llega el endgame (fee 0% + llaves revocadas), el flujo al dev muere junto con la quema.
+The dev wallet is a **destination, not an authority**: it signs nothing, has no power over the mint, only receives. No new key was introduced by the split (it uses the existing withdraw-withheld authority). The transfer to the dev pays the 1.5% like any holder (Token-2022 doesn't exempt accounts); the burn is fee-free, so supply drops by exactly `burn_cut`. Once the endgame is reached (0% fee + keys revoked), the flow to the dev dies along with the burn.
 
-El log de cada harvest queda en `state/harvest-ledger.csv` (`ts,total,burn_cut,dev_cut,burn_sig,dev_sig`), para que cualquiera pueda sumar cuánto se ha quemado vs. cuánto ha ido al dev, sin confiar en nadie.
+Every harvest is logged in `state/harvest-ledger.csv` (`ts,total,burn_cut,dev_cut,burn_sig,dev_sig`), so anyone can add up how much has been burned vs. how much has gone to the dev, without trusting anyone.
 
-Estados de la maquina: `IDLE -> HARVEST_SPLIT -> SET_FEE_ZERO -> WAIT_SWITCHOVER -> FINAL_HARVEST_SPLIT -> REVOKE_WITHDRAW -> REVOKE_FEE_CONFIG -> PUBLISH_PROOF -> DONE`.
+State machine states: `IDLE -> HARVEST_SPLIT -> SET_FEE_ZERO -> WAIT_SWITCHOVER -> FINAL_HARVEST_SPLIT -> REVOKE_WITHDRAW -> REVOKE_FEE_CONFIG -> PUBLISH_PROOF -> DONE`.
 
-**Requisito de RPC:** el paso de harvest usa `getProgramAccounts` para enumerar las cuentas con fees retenidos. Los RPC publicos (devnet y mainnet) bloquean esa consulta sobre el programa Token-2022, asi que se requiere un RPC indexador (p. ej. Helius) en la variable `ASHEM_INDEXER_RPC` (secret). El resto de operaciones usan el RPC normal (`ASHEM_RPC_URL`).
+**RPC requirement:** the harvest step uses `getProgramAccounts` to enumerate accounts with withheld fees. Public RPCs (devnet and mainnet) block that query against the Token-2022 program, so an indexer RPC (e.g., Helius) is required in the `ASHEM_INDEXER_RPC` variable (secret). All other operations use the normal RPC (`ASHEM_RPC_URL`).
 
-Config requerida adicional en Settings del repo: variable publica `ASHEM_DEV_WALLET` y secret `ASHEM_INDEXER_RPC`.
+Additional required config in repo Settings: public variable `ASHEM_DEV_WALLET` and secret `ASHEM_INDEXER_RPC`.
 
-**CRITICO — la wallet de vault:** `ASHEM_VAULT` debe ser una cuenta de token DEDICADA y vacia al inicio, usada SOLO para recolectar fees. NUNCA debe ser la tesoreria ni ninguna cuenta con saldo real: el harvest+split parte todo el saldo del vault. Como salvaguarda, el script aborta sin mover nada si un solo harvest moveria mas del 10% del supply (probable misconfiguracion).
+**CRITICAL — the vault wallet:** `ASHEM_VAULT` must be a DEDICATED token account, empty at the start, used ONLY to collect fees. It must NEVER be the treasury or any account with a real balance: harvest+split sweeps the vault's entire balance. As a safeguard, the script aborts without moving anything if a single harvest would move more than 10% of supply (likely misconfiguration).

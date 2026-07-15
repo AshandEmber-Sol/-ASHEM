@@ -1,95 +1,95 @@
-# $ASHEM — Estado tecnico del proyecto
+# $ASHEM — Project technical status
 
-**Ultima actualizacion:** 2026-07-09
+**Last updated:** 2026-07-09
 **Repo:** AshandEmber-Sol/-ASHEM
 
-## 1. Resumen
+## 1. Summary
 
-La mecanica completa del token (creacion, quema automatizada, apagado con buffer, endgame con revocacion de llaves y automatizacion por cron) esta construida, probada en validador local (T1-T5) y ensayada end-to-end contra devnet real en GitHub Actions. Cero bloqueadores tecnicos. Pendiente unico: despliegue a mainnet (decision de negocio + distribucion/LP).
+The full token mechanism (creation, automated burn, buffer-aware shutoff, endgame with key revocation, and cron automation) is built, tested on a local validator (T1-T5), and rehearsed end-to-end against real devnet in GitHub Actions. Zero technical blockers. Only pending item: mainnet deployment (business decision + distribution/LP).
 
-Principio de diseno respetado: cero programas on-chain custom, cero Anchor. Todo se apoya en extensiones nativas de Token-2022 + scripts off-chain legibles.
+Design principle respected: zero custom on-chain programs, zero Anchor. Everything relies on native Token-2022 extensions + readable off-chain scripts.
 
-## 2. Parametros del token
+## 2. Token parameters
 
-| Parametro | Valor |
+| Parameter | Value |
 |---|---|
-| Programa | Token-2022 (TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb) |
-| Supply inicial | 1,000,000,000 |
-| Decimales | 9 |
+| Program | Token-2022 (TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb) |
+| Initial supply | 1,000,000,000 |
+| Decimals | 9 |
 | Transfer fee | 150 bps (1.5%) |
-| Fee maximo por tx | 100,000 $ASHEM |
-| Piso de circulante | 300,000,000 (30%) |
-| Mint authority | Revocada (supply fijo) |
-| Freeze authority | Revocada |
+| Max fee per tx | 100,000 $ASHEM |
+| Circulating floor | 300,000,000 (30%) |
+| Mint authority | Revoked (fixed supply) |
+| Freeze authority | Revoked |
 
-## 3. Estado on-chain en DEVNET (verificado)
+## 3. On-chain DEVNET state (verified)
 
-> Direcciones de devnet (efimeras, sin valor). En mainnet se recrea todo con wallet nueva y cambian.
+> Devnet addresses (ephemeral, no value). Everything gets recreated with a new wallet on mainnet, and addresses change.
 
-| Elemento | Direccion |
+| Item | Address |
 |---|---|
 | Mint | H6cpRwEW8AxQwfWnP4iun2jWgCP2Smdn2zprMFtHuvUu |
-| Tesoreria (ATA) | 8Z1YyMmHHUMmtGCutNFhwqvSgGCWfy7tXsRBeuaYPeZz |
-| Wallet de autoridades (devnet) | DFPuDWketoZJqeuHkWL2Ev7JM76ism1FXTjWnK4VVhaV |
+| Treasury (ATA) | 8Z1YyMmHHUMmtGCutNFhwqvSgGCWfy7tXsRBeuaYPeZz |
+| Authority wallet (devnet) | DFPuDWketoZJqeuHkWL2Ev7JM76ism1FXTjWnK4VVhaV |
 
-Estado leido on-chain: supply 1B, fee 150bps, cap 100k, mint/freeze authority not set, config + withdraw authority en la wallet dedicada, withheld 0.
+State read on-chain: supply 1B, fee 150bps, cap 100k, mint/freeze authority not set, config + withdraw authority on the dedicated wallet, withheld 0.
 
-## 4. Arquitectura de la quema (version honesta)
+## 4. Burn architecture (the honest version)
 
-El transfer fee de Token-2022 NO quema ni reduce supply por si solo: solo retiene un % en cada transferencia. La quema real es un paso explicito scripteado:
+Token-2022's transfer fee does NOT burn or reduce supply by itself — it only withholds a % on each transfer. The actual burn is an explicit scripted step:
 
-    transfer fee retiene 1.5% -> harvest de fees retenidos -> burn (esto SI baja el supply)
-    -> al llegar al piso: apagar el fee -> quema final -> revocar ambas llaves -> publicar prueba
+    transfer fee withholds 1.5% -> harvest of withheld fees -> burn (THIS is what lowers supply)
+    -> once the floor is reached: turn off the fee -> final burn -> revoke both keys -> publish proof
 
-Todo vive en scripts/endgame.sh, una maquina de estados que en cada corrida lee el estado real on-chain (nunca confia en estado local), deduce en que punto esta y ejecuta UNA sola accion:
+Everything lives in scripts/endgame.sh, a state machine that on every run reads the real on-chain state (never trusts local state), infers where it stands, and executes ONE single action:
 
     IDLE -> SET_FEE_ZERO -> WAIT_SWITCHOVER -> FINAL_HARVEST_BURN
     -> REVOKE_WITHDRAW -> REVOKE_FEE_CONFIG -> PUBLISH_PROOF -> DONE
 
-Los nombres de estado aparecen literales en el codigo y en los logs.
+State names appear literally in the code and in the logs.
 
-## 5. Resultados de pruebas (validador local, epocas aceleradas)
+## 5. Test results (local validator, accelerated epochs)
 
-| Test | Que valida | Resultado |
+| Test | What it validates | Result |
 |---|---|---|
-| T1 | El switchover programado (fee->0) se ejecuta aunque se revoque la config authority durante la ventana | OK (2 veces) |
-| T2 | Harvest + burn reduce el supply exactamente por el monto quemado | OK |
-| T3 | Secuencia E2E completa hasta DONE, ambas authorities en None | OK |
-| T4 | Interrupcion a mitad de la quema -> recuperacion sin duplicar ni saltar pasos | OK |
-| T5 | Buffer dinamico dispara en piso+buffer y el supply final queda >= 300M | OK (final 303,899,995) |
+| T1 | The scheduled switchover (fee->0) executes even if the config authority is revoked during the window | OK (2 times) |
+| T2 | Harvest + burn reduces supply by exactly the amount burned | OK |
+| T3 | Full E2E sequence through DONE, both authorities at None | OK |
+| T4 | Interruption mid-burn -> recovery without duplicating or skipping steps | OK |
+| T5 | Dynamic buffer triggers at floor+buffer and final supply stays >= 300M | OK (final 303,899,995) |
 
-## 6. Ensayo en DEVNET real (run #9, GitHub Actions, exito)
+## 6. Real DEVNET rehearsal (run #9, GitHub Actions, success)
 
-El workflow corrio el ciclo completo contra el mint real de devnet. Log:
+The workflow ran the full cycle against the real devnet mint. Log:
 
     STATE=IDLE supply=1000000000 floor=300000000 buffer=7500000
     trigger=307500000 cur_fee=150bps mint_withheld=0
 
-Leyo correctamente el estado on-chain real y decidio IDLE (correcto, supply >> piso). El secret desencripto y firmo bien; el paso de commit escribio state/ de vuelta al repo. El buffer 7.5M es el fallback conservador (DEFAULT_DAILY_BURN 1.5M/dia x 5) mientras no exista historial.
+It correctly read the real on-chain state and decided IDLE (correct, supply >> floor). The secret decrypted and signed correctly; the commit step wrote state/ back to the repo. The 7.5M buffer is the conservative fallback (DEFAULT_DAILY_BURN 1.5M/day x 5) while there's no history yet.
 
-## 7. Automatizacion y custodia
+## 7. Automation and custody
 
-- Workflow: .github/workflows/endgame.yml, cron cada 6h (0 */6 * * *) + disparo manual. CLI de Solana pineada a v4.0.2. Salta limpio si faltan variables.
-- Custodia: opcion (a), GitHub Actions secret. La llave existe solo durante cada corrida. Radio de dano acotado y publico: NO mintea, NO congela, NO toca LP; peor caso = desviar fees retenidos o programar un cambio de fee visible on-chain ~2 epocas (2-4.5 dias) antes de aplicar. Tiene fecha de muerte programada en el script.
-- Auditabilidad: cada corrida commitea state/ (historial de supply + log de decisiones y firmas). La historia completa vive en git.
+- Workflow: .github/workflows/endgame.yml, cron every 6h (0 */6 * * *) + manual trigger. Solana CLI pinned to v4.0.2. Skips cleanly if variables are missing.
+- Custody: option (a), GitHub Actions secret. The key only exists during each run. Bounded, public blast radius: it CANNOT mint, CANNOT freeze, CANNOT touch LP; worst case = redirect withheld fees or schedule a fee change visible on-chain ~2 epochs (2-4.5 days) before it applies. It has a scheduled expiration built into the script.
+- Auditability: every run commits state/ (supply history + decision/signature log). The full history lives in git.
 
-## 8. Datos para el thread
+## 8. Talking points for the thread
 
-1. T1 confirmado: el apagado del fee, una vez programado, lo ejecuta el protocolo aunque quememos la llave.
-2. Custodia: opcion (a), documentada en el README.
-3. Buffer dinamico implementado: sostiene "hard floor at 300M".
-4. Revocacion ya escrita: scripts/endgame.sh, lineas 114 (withdraw-withheld) y 118 (transfer-fee-config).
+1. T1 confirmed: once scheduled, the fee shutoff is executed by the protocol even if we burn the key.
+2. Custody: option (a), documented in the README.
+3. Dynamic buffer implemented: upholds "hard floor at 300M".
+4. Revocation already written: scripts/endgame.sh, lines 114 (withdraw-withheld) and 118 (transfer-fee-config).
 
-## 9. Matices de honestidad (declararlos primero)
+## 9. Honesty caveats (state these first)
 
-- Son DOS autoridades activas, no "una": fee-config authority y withdraw-withheld authority, ambas en la wallet dedicada.
-- La quema es promesa verificable, no garantia de protocolo: la withdraw authority tecnicamente podria desviar fees. Defensa: cada harvest/withdraw/burn es publico y el supply es auditable.
-- WAIT_SWITCHOVER con epocas reales: probado en local (T1), pero su primera ejecucion en vivo (epocas ~2 dias) sera cuando el supply real llegue al trigger en mainnet.
+- There are TWO active authorities, not "one": fee-config authority and withdraw-withheld authority, both on the dedicated wallet.
+- The burn is a verifiable promise, not a protocol guarantee: the withdraw authority could technically redirect fees. Mitigation: every harvest/withdraw/burn is public and supply is auditable.
+- WAIT_SWITCHOVER with real epochs: tested locally (T1), but its first live run (epochs ~2 days) will happen when real supply hits the trigger on mainnet.
 
-## 10. Pendiente (decisiones de estrategia, no ingenieria)
+## 10. Pending (strategy decisions, not engineering)
 
-1. Despliegue a mainnet: wallet nueva dedicada + SOL real (~0.02) + recrear mint con comandos ya validados + actualizar variables del repo + cargar el secret de la llave nueva con maximo cuidado.
-2. Distribucion / liquidez (LP).
-3. Timing del lanzamiento y publicacion del thread.
+1. Mainnet deployment: new dedicated wallet + real SOL (~0.02) + recreate the mint with already-validated commands + update the repo's variables + load the new key's secret with maximum care.
+2. Distribution / liquidity (LP).
+3. Launch timing and thread publication.
 
-Bloqueadores tecnicos: ninguno.
+Technical blockers: none.
