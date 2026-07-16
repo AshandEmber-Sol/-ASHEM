@@ -33,8 +33,9 @@
 #
 # Split idempotency: the two money moves (dev transfer, burn) are resumable.
 # A run may die between them; the next run reads the vault balance on-chain
-# (== total | burn_cut | 0) and finishes exactly the missing move, never
-# duplicating. The plan (total/dev_cut/burn_cut) is recorded in state/.
+# (== total means the dev transfer is still pending) and finishes the missing
+# move, never duplicating. The burn uses the ALL keyword, so the vault always
+# drains to exactly 0. The plan (total/dev_cut) is recorded in state/.
 # =============================================================================
 set -euo pipefail
 
@@ -49,7 +50,7 @@ BUFFER_DAYS=5                   # switchover takes up to ~4.5 days on mainnet
 DEFAULT_DAILY_BURN=1500000      # conservative fallback until history exists
 STATE_DIR="state"
 HISTORY="$STATE_DIR/supply-history.csv"   # unix_ts,supply - public, committed
-LEDGER="$STATE_DIR/harvest-ledger.csv"    # ts,total,burn_cut,dev_cut,burn_sig,dev_sig
+LEDGER="$STATE_DIR/harvest-ledger.csv"    # ts,total,burn,dev,burn_sig,dev_sig (burn/dev = real on-chain amounts)
 INFLIGHT="$STATE_DIR/split-inflight"      # in-progress split plan (idempotency)
 LOGF="$STATE_DIR/endgame-log.txt"         # every decision + signature - public
 PROOF="ENDGAME.md"
@@ -70,10 +71,10 @@ withheld_sources() {
 # Idempotent: uses state/split-inflight for the plan and the on-chain vault
 # balance as the source of truth for which move still needs doing.
 do_split() {
-  local ctx="$1" srcs vraw total dev_cut burn_cut dev_sig burn_sig
+  local ctx="$1" srcs vraw total dev_cut dev_sig burn_sig burn_amt dev_amt
   if [[ -f "$INFLIGHT" ]]; then
-    read -r total dev_cut burn_cut < "$INFLIGHT"
-    log "$ctx resume inflight total=$total dev_cut=$dev_cut burn_cut=$burn_cut"
+    read -r total dev_cut _ < "$INFLIGHT"
+    log "$ctx resume inflight total=$total dev_cut=$dev_cut"
   else
     srcs="$(withheld_sources || true)"
     if [[ -n "$srcs" || "${MINT_WITHHELD:-0}" -ne 0 ]]; then
@@ -82,29 +83,34 @@ do_split() {
     fi
     vraw="$(acct_raw "$VAULT")"
     if [[ "${vraw:-0}" -eq 0 ]]; then log "$ctx nothing to split (vault empty)"; return 0; fi
-    total="$vraw"; dev_cut=$(( total / 3 )); burn_cut=$(( total - dev_cut ))
+    total="$vraw"; dev_cut=$(( total / 3 ))
     if (( total > SUPPLY * UNIT / 10 )); then log "ABORT: $ctx total=$total exceeds 10% of supply - the vault must be a DEDICATED fee-only account, never the treasury. No tokens moved."; exit 1; fi
-    printf '%s %s %s\n' "$total" "$dev_cut" "$burn_cut" > "$INFLIGHT"
-    log "$ctx planned total=$total burn_cut=$burn_cut dev_cut=$dev_cut (rounding favors burn)"
+    printf '%s %s\n' "$total" "$dev_cut" > "$INFLIGHT"
+    log "$ctx planned total=$total dev_cut=$dev_cut (rounding favors burn)"
   fi
 
-  vraw="$(acct_raw "$VAULT")"; dev_sig=already; burn_sig=already
-  if [[ "$vraw" -eq "$total" ]]; then
-    if (( dev_cut > 0 )); then
-      dev_sig="$(spl-token transfer "$MINT" "$(raw_to_ui "$dev_cut")" "$DEV_WALLET" --from "$VAULT" --fund-recipient --allow-unfunded-recipient | sig_of)"
-    else dev_sig=skipped_zero; fi
-    burn_sig="$(spl-token burn "$VAULT" "$(raw_to_ui "$burn_cut")" | sig_of)"
-  elif [[ "$vraw" -eq "$burn_cut" ]]; then
-    burn_sig="$(spl-token burn "$VAULT" "$(raw_to_ui "$burn_cut")" | sig_of)"
-  elif [[ "$vraw" -ne 0 ]]; then
-    log "ERROR: $ctx unexpected vault balance=$vraw (total=$total burn_cut=$burn_cut) - manual review"; exit 1
+  # 1/3 to dev. Idempotent: the vault balance == total iff the dev move has not
+  # happened yet (a nonzero transfer strictly lowers it); a resumed run skips it.
+  vraw="$(acct_raw "$VAULT")"; dev_sig=already
+  if (( dev_cut > 0 )) && [[ "$vraw" -eq "$total" ]]; then
+    dev_sig="$(spl-token transfer "$MINT" "$(raw_to_ui "$dev_cut")" "$DEV_WALLET" --from "$VAULT" --fund-recipient --allow-unfunded-recipient | sig_of)"
+  fi
+
+  # Burn EVERYTHING remaining with the ALL keyword: exact, no decimal/f64 round-trip.
+  # A precomputed burn_cut string occasionally lost 1 base unit to f64 truncation and
+  # left the vault undrained (prod run #37). Any dust the dev transfer rounded off stays
+  # here and is burned - "rounding always favors the burn". burn_amt/dev_amt are the REAL
+  # on-chain amounts, so the ledger reflects reality and burn_amt + dev_amt == total.
+  burn_amt="$(acct_raw "$VAULT")"; dev_amt=$(( total - burn_amt )); burn_sig=already
+  if (( burn_amt > 0 )); then
+    burn_sig="$(spl-token burn "$VAULT" ALL | sig_of)"
   fi
 
   vraw="$(acct_raw "$VAULT")"
   [[ "${vraw:-0}" -eq 0 ]] || { log "ERROR: $ctx vault not drained (=$vraw)"; exit 1; }
   rm -f "$INFLIGHT"
-  echo "$(date -u +%FT%TZ),$total,$burn_cut,$dev_cut,$burn_sig,$dev_sig" >> "$LEDGER"
-  log "$ctx ok total=$total burn_cut=$burn_cut dev_cut=$dev_cut burn_sig=$burn_sig dev_sig=$dev_sig new_supply=$(spl-token supply "$MINT")"
+  echo "$(date -u +%FT%TZ),$total,$burn_amt,$dev_amt,$burn_sig,$dev_sig" >> "$LEDGER"
+  log "$ctx ok total=$total burn=$burn_amt dev=$dev_amt burn_sig=$burn_sig dev_sig=$dev_sig new_supply=$(spl-token supply "$MINT")"
 }
 
 # ---- on-chain reads ---------------------------------------------------------
