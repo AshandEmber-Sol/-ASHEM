@@ -88,3 +88,7 @@
 2026-07-16T07:38:17Z HARVEST_SPLIT harvest ok withdraw_sig=228eNG2wFWUcz7RvXEM3Xi6FyZpCJ5GJLHAXx89v63bibPByNKPoM2j5xbDdxjaetWCAYmuFzorn6KQ7xWL3NMvf
 2026-07-16T07:38:17Z HARVEST_SPLIT planned total=9385 burn_cut=6257 dev_cut=3128 (rounding favors burn)
 2026-07-16T07:38:42Z HARVEST_SPLIT ok total=9385 burn_cut=6257 dev_cut=3128 burn_sig=5Tn487NX8EbSZBtPKPxJEkdLPwc8Kn7UiEUfo8NhubVRo66kbjdb3XDFqmkCXS9odnr2datWfJGJiZuEerwQACEm dev_sig=3ASxomPpraPHH12u2E8fep1y1t8pDrvuunwHiBEdqqTYBE3tsE6kChPYG8gHef5dMP16tv3w3RYfFa6cndWc9tfm new_supply=999778572.864321628
+2026-07-16T18:16:48Z STATE=HARVEST_SPLIT supply=999778572 floor=300000000 buffer=159412 trigger=300159412 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-07-16T18:16:51Z HARVEST_SPLIT harvest ok withdraw_sig=5TN1Nt2zy29SUCJUE7zMhn9z1SsZ9c5HQ3CtdJHg68rwiRzLb6ccooPpattcn2DjjKpkCXcMswXpTkZeBK5mkuFJ
+2026-07-16T18:16:51Z HARVEST_SPLIT planned total=47010000001 dev_cut=15670000000 (rounding favors burn)
+2026-07-16T18:17:14Z HARVEST_SPLIT ok total=47010000001 burn=31340000001 dev=15670000000 burn_sig=yeULN79oJxeU173X7jnZm8REr2mwakQ3AmDYkJR3GzZRFzLcgSVxkawvR8L8N5ZCsie65RyG9XeEbqfAN8jKwuK dev_sig=4aZnfkwmkEDcQrSwxzrdjipWVMeWnTKJkcabeLLMpkVWNMnEhdkodrFHtM5gwqatHtQmZyF1inhoEdaCWtGhfqYx new_supply=999778541.524321594
