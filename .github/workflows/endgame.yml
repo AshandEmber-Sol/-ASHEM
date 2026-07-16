@@ -44,7 +44,7 @@ jobs:
 
       - name: Checkout
         if: steps.cfg.outputs.configured == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Solana CLI (pinned to the locally tested version)
         if: steps.cfg.outputs.configured == 'true'
