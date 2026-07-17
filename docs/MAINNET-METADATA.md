@@ -1,9 +1,8 @@
 # On-chain token metadata — mainnet procedure
 
-Status: not yet run on mainnet. The metadata flow was verified end-to-end on a disposable devnet
-rehearsal mint (`6Y2EHSvhZyzJE6wESZcAKtKzKX37Ex3DgY1JMTipM3Cd`, 2026-07-15). Before mainnet, run the
-full step-1 command (transfer-fee flags included) on a fresh disposable devnet mint and verify the
-`transferFeeConfig` fields — standard pre-launch verification.
+Status: not yet run on mainnet. Verified on devnet: the metadata flow on rehearsal mint
+`6Y2EHSvhZyzJE6wESZcAKtKzKX37Ex3DgY1JMTipM3Cd` (2026-07-15), and the transfer-fee configuration
+(150 bps, uncapped) on rehearsal mint `LhghiS2pAdbbCK4hR97sRAnPkvbHWoiXrPdqdeQDDBH` (2026-07-17).
 
 ## Why native Token-2022 metadata, not classic Metaplex
 
@@ -52,9 +51,11 @@ end-of-life (`REVOKE_WITHDRAW`, `REVOKE_FEE_CONFIG` states — see the script's 
 | `transferFeeConfigAuthority` | Can change the fee rate/cap later | `transfer-fee-config` |
 | `withdrawWithheldAuthority` | Can collect (`withdraw-withheld-tokens`) the fees held in token accounts | `withheld-withdraw` |
 
-Both are set to the mainnet authority wallet at creation (step 1) and **stay active** — they are
-intentionally *not* revoked by this document. `endgame.sh` is what revokes them later, once supply
-has wound down to the floor. Revoking them here would kill the fee mechanism before it ran.
+`spl-token create-token` (5.5.0) has no explicit flags for these — it sets **both to the fee payer**
+(the mint authority) automatically at creation. They **stay active** and are intentionally *not*
+revoked by this document; `endgame.sh` revokes them later, once supply has wound down to the floor.
+Revoking them here would kill the fee mechanism before it ran. (Confirmed on the 2026-07-17 devnet
+rehearsal: both defaulted to the authority wallet.)
 
 **Fee value:** 150 basis points (1.5%).
 
@@ -62,8 +63,9 @@ has wound down to the floor. Revoking them here would kill the fee mechanism bef
 uncapped — any finite cap would undercharge large transfers and break the "rounding always favors
 the burn" invariant `endgame.sh` relies on. Pass `u64::MAX` in base units (`18446744073709551615`)
 to `--transfer-fee-maximum-fee` (the flag takes raw base units, not a UI-scaled amount) for an
-effectively uncapped fee. Confirm on the devnet rehearsal that this value is accepted and behaves as
-uncapped.
+effectively uncapped fee. (Confirmed on the 2026-07-17 devnet rehearsal: `create-token` accepts
+`u64::MAX`, stores it as the raw base-unit cap, and a 100,000-token transfer withheld exactly 1,500 —
+a proportional 1.5% with no cap.)
 
 ## Asset hosting
 
@@ -86,20 +88,19 @@ a logo + JSON is a few KB).
 Order matters: `initialize-metadata` must sign with the mint authority, so it has to run before
 mint authority is revoked (step 6). Freeze authority (step 7) can be revoked any time after minting.
 The 4 disable calls here cover metadata + mint + freeze only — `transfer-fee-config` and
-`withheld-withdraw` (set in step 1) are deliberately left active; `endgame.sh` revokes those later,
-at end-of-life.
+`withheld-withdraw` (set to the fee payer in step 1) are deliberately left active; `endgame.sh`
+revokes those later, at end-of-life.
 
 ```bash
 AUTH=<mainnet-authority-keypair>
 MINT_KP=<mainnet-mint-keypair>
 
 # 1. Create mint with Metadata Pointer + Token Metadata extension, freeze enabled,
-#    and Transfer Fee enabled (1.5%, uncapped — see "Transfer fee extension" above)
+#    and Transfer Fee enabled (1.5%, uncapped — see "Transfer fee extension" above).
+#    The two fee authorities (config + withdraw-withheld) default to the fee payer ($AUTH).
 spl-token create-token --enable-metadata --enable-freeze \
   --transfer-fee-basis-points 150 \
   --transfer-fee-maximum-fee 18446744073709551615 \
-  --transfer-fee-authority $(solana-keygen pubkey $AUTH) \
-  --withdraw-withheld-authority $(solana-keygen pubkey $AUTH) \
   -p TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb \
   --decimals 9 -u mainnet-beta \
   --mint-authority $(solana-keygen pubkey $AUTH) \
@@ -108,7 +109,9 @@ spl-token create-token --enable-metadata --enable-freeze \
 
 MINT=$(solana-keygen pubkey $MINT_KP)
 
-# 2. Mint the full supply
+# 2. Create the authority's token account, then mint the full supply into it
+#    (create-token does not auto-create it in spl-token 5.5.0)
+spl-token create-account $MINT --fee-payer $AUTH -u mainnet-beta
 spl-token mint $MINT 1000000000 --mint-authority $AUTH --fee-payer $AUTH -u mainnet-beta
 
 # 3. Write name/symbol/uri (temporary real authority — same script, no gap)
@@ -146,19 +149,23 @@ curl -s <mainnet RPC> -X POST -H "Content-Type: application/json" -d '{
 Expect: `mintAuthority: null`, `freezeAuthority: null`,
 `metadataPointer.state.authority: null`, `tokenMetadata.state.updateAuthority: null`,
 `tokenMetadata.state.name/symbol/uri` matching what was set in step 3, and
-`transferFeeConfig.newerTransferFee.transferFeeBasisPoints: 150` with
-`transferFeeConfigAuthority`/`withdrawWithheldAuthority` both equal to the mainnet authority pubkey
-(not null — those stay active by design).
+`transferFeeConfig.newerTransferFee.transferFeeBasisPoints: 150` with `maximumFee:
+18446744073709551615` and `transferFeeConfigAuthority`/`withdrawWithheldAuthority` both equal to the
+mainnet authority pubkey (not null — those stay active by design).
 
 ## Devnet rehearsal reference
 
-Mint: `6Y2EHSvhZyzJE6wESZcAKtKzKX37Ex3DgY1JMTipM3Cd` (devnet, disposable, 0 decimals, supply 1).
-Image: `https://gateway.irys.xyz/K5jC35s24VjxakLYjtJvcfEVbSUkqNJx2aC3ihuuvtr`.
+Metadata mint: `6Y2EHSvhZyzJE6wESZcAKtKzKX37Ex3DgY1JMTipM3Cd` (devnet, disposable, 0 decimals,
+supply 1). Image: `https://gateway.irys.xyz/K5jC35s24VjxakLYjtJvcfEVbSUkqNJx2aC3ihuuvtr`.
 Metadata JSON: `https://gateway.irys.xyz/6kdjMGginQG3hbVtGgp2YVyAfaHwRH1d3Em28HsmGSjm`.
 The metadata flow (steps 3–5 + the disable calls) was run and verified via direct RPC query on
-2026-07-15. Before mainnet, re-run a fresh disposable devnet mint with the full step-1 command
-(transfer-fee flags included) and verify the `transferFeeConfig` fields — the 2026-07-15 rehearsal
-covered the metadata flow specifically.
+2026-07-15.
+
+The transfer-fee configuration in step 1 was verified separately on 2026-07-17 on a disposable
+devnet mint (`LhghiS2pAdbbCK4hR97sRAnPkvbHWoiXrPdqdeQDDBH`, decimals 9): `create-token` with the
+`--transfer-fee-*` flags produced `transferFeeBasisPoints: 150`, `maximumFee: u64::MAX`, and both
+fee authorities defaulting to the authority wallet; a 100,000-token transfer withheld exactly 1,500
+(1.5%, uncapped).
 
 This procedure is what mainnet deployment should follow — decimals (9), supply (1,000,000,000),
 and network flags are the only values that change.
