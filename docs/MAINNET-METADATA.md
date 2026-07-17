@@ -1,6 +1,9 @@
 # On-chain token metadata — mainnet procedure
 
-Status: verified end-to-end on devnet (2026-07-15), rehearsal mint `6Y2EHSvhZyzJE6wESZcAKtKzKX37Ex3DgY1JMTipM3Cd`. Not yet run on mainnet.
+Status: not yet run on mainnet. The metadata flow was verified end-to-end on a disposable devnet
+rehearsal mint (`6Y2EHSvhZyzJE6wESZcAKtKzKX37Ex3DgY1JMTipM3Cd`, 2026-07-15). Before mainnet, run the
+full step-1 command (transfer-fee flags included) on a fresh disposable devnet mint and verify the
+`transferFeeConfig` fields — standard pre-launch verification.
 
 ## Why native Token-2022 metadata, not classic Metaplex
 
@@ -35,6 +38,33 @@ interface requires a real authority at creation time. The fix is not "leave it m
 longer"; it's initializing with the real authority and disabling it in the **next command of the
 same script**, with no manual step and no gap where someone could act on it.
 
+## Transfer fee extension
+
+The mint is created with the Token-2022 Transfer Fee extension enabled (step 1). Transfer Fee must
+be enabled at mint creation — unlike most extensions it cannot be added afterward. This is the
+extension that collects the 1.5% fee the harvest → split → burn mechanism (`endgame.sh`) runs on.
+
+Two authorities come with it, and `endgame.sh` already expects them and eventually revokes them at
+end-of-life (`REVOKE_WITHDRAW`, `REVOKE_FEE_CONFIG` states — see the script's own header comment):
+
+| Authority | Controls | `spl-token authorize` name |
+|---|---|---|
+| `transferFeeConfigAuthority` | Can change the fee rate/cap later | `transfer-fee-config` |
+| `withdrawWithheldAuthority` | Can collect (`withdraw-withheld-tokens`) the fees held in token accounts | `withheld-withdraw` |
+
+Both are set to the mainnet authority wallet at creation (step 1) and **stay active** — they are
+intentionally *not* revoked by this document. `endgame.sh` is what revokes them later, once supply
+has wound down to the floor. Revoking them here would kill the fee mechanism before it ran.
+
+**Fee value:** 150 basis points (1.5%).
+
+**Max fee (cap):** the design requires the fee to always be exactly 1.5% of the transfer amount,
+uncapped — any finite cap would undercharge large transfers and break the "rounding always favors
+the burn" invariant `endgame.sh` relies on. Pass `u64::MAX` in base units (`18446744073709551615`)
+to `--transfer-fee-maximum-fee` (the flag takes raw base units, not a UI-scaled amount) for an
+effectively uncapped fee. Confirm on the devnet rehearsal that this value is accepted and behaves as
+uncapped.
+
 ## Asset hosting
 
 The metadata `uri` points to a JSON file (`{name, symbol, description, image}`), and `image` in turn
@@ -51,17 +81,25 @@ For mainnet: same commands with `-n mainnet` and `--provider-url <mainnet RPC>`,
 `irys fund <lamports> -n mainnet ...` from the mainnet authority wallet (real SOL, budget small —
 a logo + JSON is a few KB).
 
-## Verified procedure (7 steps, 4 disable calls)
+## Procedure (7 steps, 4 disable calls)
 
 Order matters: `initialize-metadata` must sign with the mint authority, so it has to run before
 mint authority is revoked (step 6). Freeze authority (step 7) can be revoked any time after minting.
+The 4 disable calls here cover metadata + mint + freeze only — `transfer-fee-config` and
+`withheld-withdraw` (set in step 1) are deliberately left active; `endgame.sh` revokes those later,
+at end-of-life.
 
 ```bash
 AUTH=<mainnet-authority-keypair>
 MINT_KP=<mainnet-mint-keypair>
 
-# 1. Create mint with Metadata Pointer + Token Metadata extension, and freeze enabled
+# 1. Create mint with Metadata Pointer + Token Metadata extension, freeze enabled,
+#    and Transfer Fee enabled (1.5%, uncapped — see "Transfer fee extension" above)
 spl-token create-token --enable-metadata --enable-freeze \
+  --transfer-fee-basis-points 150 \
+  --transfer-fee-maximum-fee 18446744073709551615 \
+  --transfer-fee-authority $(solana-keygen pubkey $AUTH) \
+  --withdraw-withheld-authority $(solana-keygen pubkey $AUTH) \
   -p TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb \
   --decimals 9 -u mainnet-beta \
   --mint-authority $(solana-keygen pubkey $AUTH) \
@@ -95,8 +133,8 @@ spl-token authorize $MINT freeze --disable --authority $AUTH -u mainnet-beta
 
 ## Verification (don't trust CLI output alone)
 
-Query the mint directly and confirm all four authority fields are `null`, plus the correct
-name/symbol/uri:
+Query the mint directly and confirm the four disabled authority fields are `null`, plus the correct
+name/symbol/uri, plus the transfer-fee config matching what was set in step 1:
 
 ```bash
 curl -s <mainnet RPC> -X POST -H "Content-Type: application/json" -d '{
@@ -107,13 +145,20 @@ curl -s <mainnet RPC> -X POST -H "Content-Type: application/json" -d '{
 
 Expect: `mintAuthority: null`, `freezeAuthority: null`,
 `metadataPointer.state.authority: null`, `tokenMetadata.state.updateAuthority: null`,
-`tokenMetadata.state.name/symbol/uri` matching what was set in step 3.
+`tokenMetadata.state.name/symbol/uri` matching what was set in step 3, and
+`transferFeeConfig.newerTransferFee.transferFeeBasisPoints: 150` with
+`transferFeeConfigAuthority`/`withdrawWithheldAuthority` both equal to the mainnet authority pubkey
+(not null — those stay active by design).
 
 ## Devnet rehearsal reference
 
 Mint: `6Y2EHSvhZyzJE6wESZcAKtKzKX37Ex3DgY1JMTipM3Cd` (devnet, disposable, 0 decimals, supply 1).
 Image: `https://gateway.irys.xyz/K5jC35s24VjxakLYjtJvcfEVbSUkqNJx2aC3ihuuvtr`.
 Metadata JSON: `https://gateway.irys.xyz/6kdjMGginQG3hbVtGgp2YVyAfaHwRH1d3Em28HsmGSjm`.
-All 7 steps run and verified via direct RPC query on 2026-07-15. This procedure is what mainnet
-deployment should follow — decimals (9), supply (1,000,000,000), and network flags are the only
-values that change.
+The metadata flow (steps 3–5 + the disable calls) was run and verified via direct RPC query on
+2026-07-15. Before mainnet, re-run a fresh disposable devnet mint with the full step-1 command
+(transfer-fee flags included) and verify the `transferFeeConfig` fields — the 2026-07-15 rehearsal
+covered the metadata flow specifically.
+
+This procedure is what mainnet deployment should follow — decimals (9), supply (1,000,000,000),
+and network flags are the only values that change.
