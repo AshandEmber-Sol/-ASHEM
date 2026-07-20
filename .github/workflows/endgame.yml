@@ -61,12 +61,31 @@ jobs:
           printf '%s' "$KEYPAIR_JSON" > "$RUNNER_TEMP/authority.json"
           solana config set --url "$ASHEM_RPC_URL" --keypair "$RUNNER_TEMP/authority.json"
 
+      - name: Snapshot log length before the run (to slice this run's lines)
+        id: pre
+        if: steps.cfg.outputs.configured == 'true'
+        run: |
+          n=0; [ -f state/endgame-log.txt ] && n="$(wc -l < state/endgame-log.txt | tr -d ' ')"
+          echo "loglines=$n" >> "$GITHUB_OUTPUT"
+
       - name: Run endgame state machine (one action max)
+        id: endgame
         if: steps.cfg.outputs.configured == 'true'
         run: bash scripts/endgame.sh
 
+      # Read-only health report. Runs even if endgame.sh failed (so a 🔴 gets
+      # written down). Takes NO corrective action and makes NO RPC calls - it
+      # only parses the files endgame.sh already produced this run.
+      - name: Generate endgame health report (read-only; append)
+        if: always() && steps.cfg.outputs.configured == 'true'
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ENDGAME_OUTCOME: ${{ steps.endgame.outcome }}
+          PREV_LOGLINES: ${{ steps.pre.outputs.loglines }}
+        run: bash scripts/health-report.sh
+
       - name: Commit public state back to the repo
-        if: steps.cfg.outputs.configured == 'true'
+        if: always() && steps.cfg.outputs.configured == 'true'
         run: |
           git config user.name "ashem-endgame-bot"
           git config user.email "actions@users.noreply.github.com"
