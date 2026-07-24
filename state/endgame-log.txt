@@ -153,3 +153,4 @@
 2026-07-23T09:15:24Z STATE=IDLE supply=999778388 floor=300000000 buffer=138 trigger=300000138 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
 2026-07-23T17:04:06Z STATE=IDLE supply=999778388 floor=300000000 buffer=132 trigger=300000132 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
 2026-07-23T21:39:59Z STATE=IDLE supply=999778388 floor=300000000 buffer=2 trigger=300000002 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-07-24T09:12:05Z STATE=IDLE supply=999778388 floor=300000000 buffer=7500000 trigger=307500000 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
