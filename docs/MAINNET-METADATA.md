@@ -59,13 +59,27 @@ rehearsal: both defaulted to the authority wallet.)
 
 **Fee value:** 150 basis points (1.5%).
 
-**Max fee (cap):** the design requires the fee to always be exactly 1.5% of the transfer amount,
-uncapped — any finite cap would undercharge large transfers and break the "rounding always favors
-the burn" invariant `endgame.sh` relies on. Pass `u64::MAX` in base units (`18446744073709551615`)
-to `--transfer-fee-maximum-fee` (the flag takes raw base units, not a UI-scaled amount) for an
-effectively uncapped fee. (Confirmed on the 2026-07-17 devnet rehearsal: `create-token` accepts
-`u64::MAX`, stores it as the raw base-unit cap, and a 100,000-token transfer withheld exactly 1,500 —
-a proportional 1.5% with no cap.)
+**Max fee (cap): none — uncapped (`u64::MAX`).** Pass `u64::MAX` in base units
+(`18446744073709551615`) to `--transfer-fee-maximum-fee` (the flag takes raw base units, not a
+UI-scaled amount). (Confirmed on the 2026-07-17 devnet rehearsal: `create-token` accepts `u64::MAX`,
+stores it as the raw base-unit cap, and a 100,000-token transfer withheld exactly 1,500 — a
+proportional 1.5% with no cap.)
+
+> **DECISION — Option A, closed 2026-07-26 (do NOT re-litigate).** The mainnet mint is intentionally
+> **uncapped**: always exactly 1.5%, no per-transaction cap. The "100,000 $ASHEM cap" in the original
+> spec and any older draft content is **superseded** — all mainnet-facing content must say "always
+> exactly 1.5%, no cap."
+>
+> **Correction to an earlier rationale (kept for honesty):** a previous version of this note claimed a
+> finite cap "would break the rounding-always-favors-the-burn invariant." That was **imprecise** — that
+> invariant is `dev_cut = floor(total/3)` applied to whatever is *collected*; a cap changes *how much*
+> is collected, not *how it is split*, so the split math is unaffected. The real reasons for uncapping:
+> (1) a 100,000 cap on a 1,000,000,000 supply is 0.01% of supply — low enough that with any real trading
+> volume it would bind *most* transactions, not a rare whale minority, quietly turning "always ~1.5%"
+> into "1.5% unless you're big"; (2) "always exactly 1.5%, no exceptions" is a simpler, more defensible
+> public claim; and (3) a per-tx cap is functionally *special treatment for large transfers* — the same
+> narrative inconsistency the fee-split docs reject for the dev wallet ("no special treatment at the
+> protocol level"), just on the transaction-size axis instead of the wallet-role axis.
 
 ## Asset hosting
 

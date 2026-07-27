@@ -17,7 +17,7 @@ Design principle respected: zero custom on-chain programs, zero Anchor. Everythi
 | Initial supply | 1,000,000,000 |
 | Decimals | 9 |
 | Transfer fee | 150 bps (1.5%) |
-| Max fee per tx | 100,000 $ASHEM |
+| Max fee per tx | none — always exactly 1.5% (uncapped) |
 | Circulating floor | 300,000,000 (30%) |
 | Mint authority | Revoked (fixed supply) |
 | Freeze authority | Revoked |

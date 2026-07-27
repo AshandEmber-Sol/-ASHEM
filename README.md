@@ -2,7 +2,7 @@
 
 Solana memecoin built on the Token-2022 program (spl-token-2022), using only native extensions — no Anchor, no custom contracts.
 
-Initial supply 1,000,000,000 | Decimals 9 | TransferFeeConfig extension (1.5% with a per-transaction cap) | Circulating floor 300,000,000.
+Initial supply 1,000,000,000 | Decimals 9 | TransferFeeConfig extension (always exactly 1.5%, no per-transaction cap) | Circulating floor 300,000,000.
 
 Transparency: the Transfer Fee extension does NOT burn tokens by itself — it only withholds a percentage on each transfer. The actual burn is an explicit step executed by a script (fee harvest, burn, and automatic fee shutoff once the 300M floor is reached).
 
@@ -45,7 +45,7 @@ GitHub Actions secret (option a). Reasons: the workflow is auditable line by lin
 
 ### Fee split (1.0% burn / 0.5% dev)
 
-The transfer fee stays **1.5% total** for whoever transfers (the 100,000 $ASHEM cap doesn't change). On harvest, the collected fees are SPLIT:
+The transfer fee stays **1.5% total** for whoever transfers — always exactly 1.5%, with no per-transaction cap. On harvest, the collected fees are SPLIT:
 
 - **2/3 -> burn** (lowers supply toward the 300M floor)
 - **1/3 -> dev wallet** (project sustainability, fully transparent on-chain flow)
