@@ -198,3 +198,7 @@
 2026-07-29T16:53:20Z STATE=IDLE supply=999778348 floor=300000000 buffer=28 trigger=300000028 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
 2026-07-29T21:16:11Z STATE=IDLE supply=999778348 floor=300000000 buffer=28 trigger=300000028 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
 2026-07-30T09:37:35Z STATE=IDLE supply=999778348 floor=300000000 buffer=29 trigger=300000029 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-07-30T14:38:22Z STATE=HARVEST_SPLIT supply=999778348 floor=300000000 buffer=28 trigger=300000028 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-07-30T14:38:25Z HARVEST_SPLIT harvest ok withdraw_sig=5Kt1fwgFD6N9pD9DcbeM6oXxNqhTSqr2Tqy4djF2V1Hb3Jxas7qiBG5j1rUcFV1KSWyJh4zNh1xvrhcExFv8BjcM
+2026-07-30T14:38:25Z HARVEST_SPLIT planned total=45000000000 dev_cut=15000000000 (rounding favors burn)
+2026-07-30T14:38:40Z HARVEST_SPLIT ok total=45000000000 burn=30000000000 dev=15000000000 burn_sig=rHyTaYR8ETHwNomz9kFjfyjqS8UJp8aAuUkF2ZN2YwqNZwR8orQ7pMgzWg3JpNXjoo6FagvBBjSfLRgcFmdgaM7 dev_sig=2o7qgwrbXJNzAe5pQRimjcmma12j2wwKud1qMAzYTaCymrskcWqiFAqj63qBHs7DiQYXExhJEnFN8kbGdwxmKNam new_supply=999778318.402010029
