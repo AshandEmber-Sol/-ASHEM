@@ -224,3 +224,4 @@
 2026-07-31T21:48:10Z HARVEST_SPLIT ok total=1 burn=1 dev=0 burn_sig=5Q2NKaXoFxa1sppP6S16pJGEmbk9sjEZhgvRuXzgeJbjRDBn8mdwcvQkUjz2k8WUd5Evia5wjwCpYwa5GjfbcyuD dev_sig=already new_supply=999778318.251256258
 2026-08-01T07:54:14Z STATE=IDLE supply=999778318 floor=300000000 buffer=52 trigger=300000052 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
 2026-08-01T15:42:49Z STATE=IDLE supply=999778318 floor=300000000 buffer=50 trigger=300000050 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-08-01T20:37:56Z STATE=IDLE supply=999778318 floor=300000000 buffer=53 trigger=300000053 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
