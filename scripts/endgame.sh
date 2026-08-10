@@ -48,12 +48,12 @@ UNIT=1000000000                 # 10^decimals (decimals = 9)
 FLOOR=300000000                 # hard floor (UI): supply must never END below this
 BUFFER_DAYS=5                   # switchover takes up to ~4.5 days on mainnet
 DEFAULT_DAILY_BURN=1500000      # conservative fallback until history exists
-STATE_DIR="state"
+STATE_DIR="${STATE_DIR:-state}"
 HISTORY="$STATE_DIR/supply-history.csv"   # unix_ts,supply - public, committed
 LEDGER="$STATE_DIR/harvest-ledger.csv"    # ts,total,burn,dev,burn_sig,dev_sig (burn/dev = real on-chain amounts)
 INFLIGHT="$STATE_DIR/split-inflight"      # in-progress split plan (idempotency)
 LOGF="$STATE_DIR/endgame-log.txt"         # every decision + signature - public
-PROOF="ENDGAME.md"
+PROOF="${PROOF_FILE:-ENDGAME.md}"
 
 mkdir -p "$STATE_DIR"
 log() { echo "$(date -u +%FT%TZ) $*" | tee -a "$LOGF"; }

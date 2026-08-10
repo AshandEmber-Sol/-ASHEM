@@ -25,7 +25,7 @@
 set -uo pipefail   # NOTE: no -e; a reporter must finish and write its finding
                    # even when something it inspects looks wrong.
 
-STATE_DIR="state"
+STATE_DIR="${STATE_DIR:-state}"
 LOGF="$STATE_DIR/endgame-log.txt"
 LEDGER="$STATE_DIR/harvest-ledger.csv"
 HEALTH="$STATE_DIR/endgame-health.md"
