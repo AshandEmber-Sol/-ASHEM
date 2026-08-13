@@ -44,7 +44,12 @@ jobs:
       - name: Install Solana CLI (pinned)
         if: steps.cfg.outputs.configured == 'true'
         run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/v4.0.2/install)"
+          ok=0
+          for i in 1 2 3 4 5; do
+            if sh -c "$(curl -sSfL https://release.anza.xyz/v4.0.2/install)"; then ok=1; break; fi
+            echo "install attempt $i failed, retrying in 15s..."; sleep 15
+          done
+          [ "$ok" = 1 ] || { echo "Solana CLI install failed after 5 attempts"; exit 1; }
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
       - name: Configure wallet from the mainnet secret (exists only during this run)
         if: steps.cfg.outputs.configured == 'true'
