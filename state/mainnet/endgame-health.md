@@ -412,3 +412,18 @@ off-repo (Cowork): se lee sin tocar el log crudo, el Codespace ni ningún secret
 **Detalle libre:** cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0; acumulado quemado=n/a dev=n/a (base units).
 
 ---
+
+## Endgame health — 2026-08-17T07:28:36Z
+
+**Semáforo:** 🔴
+**Run revisado:** https://github.com/AshandEmber-Sol/-ASHEM/actions/runs/32005874074
+**Harvest:** no verificable — el run no dejó línea de estado en el log
+**Circuit breaker:** OK — sin harvest este ciclo, nada que evaluar contra el cap
+**Buffer dinámico:** no verificable — falta supply/trigger en el log de este run
+**Máquina de estados:** desconocido (sin línea STATE= en este run)
+**Idempotencia:** OK — sin split en vuelo, vault drenado a 0
+**Indexador:** ~0 llamada(s) getProgramAccounts (derivado del estado, sin contador vivo)
+**Anomalía vs. falla de harvest conocida:** nueva — el step de endgame falló sin ABORT/ERROR logueado (posible fallo temprano de RPC/entorno)
+**Detalle libre:** cur_fee=n/a up_fee=n/a vault_raw=n/a mint_withheld=n/a; acumulado quemado=n/a dev=n/a (base units). HALLAZGOS 🔴: endgame step con outcome=failure sin ABORT/ERROR en el log (fallo antes de loguear);endgame step outcome=failure. Notas 🟡: no se pudo leer supply/trigger del run;el run no agregó líneas al log; no hay datos nuevos que verificar este ciclo.
+
+---
