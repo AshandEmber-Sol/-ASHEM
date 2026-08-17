@@ -178,3 +178,31 @@ spl-token authorize "$MINT" metadata-pointer --disable --authority "$TREASURY" $
 spl-token authorize "$MINT" mint --disable --authority "$TREASURY" $NET
 spl-token authorize "$MINT" freeze --disable --authority "$TREASURY" $NET
 ```
+---
+
+## Automation — endgame guard live on mainnet (added 2026-08-10)
+
+The off-chain guard that operates the burn (`scripts/endgame.sh`, described in
+[`FEE-SPLIT.md`](../FEE-SPLIT.md)) is now wired to the mainnet mint and runs automatically.
+
+- **Workflow:** [`.github/workflows/endgame-mainnet.yml`](../.github/workflows/endgame-mainnet.yml) —
+  a dedicated workflow, separate from the devnet demo's guard (`endgame.yml`), so nothing on the
+  public demo can trigger a mainnet run. It runs on a 6-hour cron.
+- **Custody (unchanged from the deploy above):** the only key it uses is the hot fee/harvest
+  authority `DBj2zRbarj6J1DAnMmb47Wb1saEgLWPK8VFAuZCZFpmJ`, stored solely as a GitHub Actions
+  *environment* secret and materialized only for the duration of a run. Its reach is bounded — it
+  can change the transfer fee or sweep withheld fees, but it **cannot mint, freeze, or touch
+  liquidity** (those authorities are `null`, see above). Any fee change is visible on-chain and
+  takes effect ~2 epochs later. The guard revokes both fee authorities itself at the 300M floor.
+- **State is public:** every run appends a health entry to
+  [`state/mainnet/endgame-health.md`](../state/mainnet/endgame-health.md) and commits it back to
+  this repo — the full history is auditable in git, and the runs themselves are public under the
+  repo's **Actions** tab.
+- **Pre-liquidity behavior:** until liquidity exists and transfers start generating fees, the guard
+  has nothing to harvest, so every run reports `STATE=IDLE` with `supply=1,000,000,000` and
+  `vault=0`. This is the expected state, not an anomaly — the burn only starts moving once the token
+  trades.
+
+**Verify it:** the "ASHEM endgame guard (mainnet)" workflow under Actions shows every run
+(success/failure); `state/mainnet/endgame-health.md` shows the per-run health semaphore and the
+derived on-chain figures.
