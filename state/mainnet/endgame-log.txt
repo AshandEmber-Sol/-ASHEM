@@ -113,3 +113,4 @@
 2026-09-06T11:06:28Z HARVEST_SPLIT harvest ok withdraw_sig=5jHosfhR4m7UkXBu6BrED7d9vPDyA5otnozd9FUTA8Sm5zWFG3mnM9fhqv55BMT2bo9n4TxyxEyx7fQHtNPW3VoE
 2026-09-06T11:06:29Z HARVEST_SPLIT planned total=2 dev_cut=0 (rounding favors burn)
 2026-09-06T11:06:33Z HARVEST_SPLIT ok total=2 burn=2 dev=0 burn_sig=2dgBVa24ZNbSmvXj5isa3anhDccb6DVTJAUpQAwTDTpvMsDQuHnfh8zGGHNAXc3nLH77CCoHCKcppC21o8tP9hEv dev_sig=already new_supply=999999999.989949748
+2026-09-06T15:33:46Z STATE=IDLE supply=999999999 floor=300000000 buffer=0 trigger=300000000 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
