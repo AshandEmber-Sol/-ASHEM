@@ -75,11 +75,7 @@ The treasury's undistributed supply is fully allocated across three buckets, all
 - **Bucket C — operational:** ~30,000,000 $ASHEM
   (`Adwbuucngmsh6ASpjk2vQBtnGMkYASCLiDUehAhikTQb`), the only freely-movable portion.
 
-`scripts/bucket-b-prep.sh` runs the monthly bucket B step. Like `endgame.sh`, it is
-**read-only and holds no secrets**: it reads on-chain supply, applies the same **300M floor-check**
-and a **10% circuit-breaker**, decides the phase (burn a monthly tranche — see
-`MONTHLY_BURN_TRANCHE` — while supply > 300M, then switch to Burn&Earn liquidity locking), and
-**prints the exact command to sign on a Ledger**. Each month is recorded in an idempotent ledger
-(`state/bucket-b-ledger.csv`) and produces a public report. Burns reduce supply toward the same
-300M floor the endgame targets; the two mechanisms share the floor and both stop at 300M. Moving
-tokens between wallets never affects the endgame, which reads total mint supply, not balances.
+`scripts/bucket-b-prep.sh` reads on-chain supply and Ember Reserve state, enforces the 300M floor
+and a per-cycle circuit breaker, and prepares the monthly treasury action (burn or locked-liquidity
+add). Read-only compute; all signing happens on hardware wallets — no keys in CI.
+Ledger: `state/bucket-b-ledger.csv`.
