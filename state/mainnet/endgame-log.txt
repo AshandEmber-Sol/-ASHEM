@@ -166,3 +166,9 @@
 2026-09-10T16:31:52Z HARVEST_SPLIT harvest ok withdraw_sig=26j2eo3kQodGpgnSnsuLgPHUwpWyskCCZEf3GePsRpHeqtauHE76sVdm64qymbVQLundtxe5n14RxgFsFersF8ym
 2026-09-10T16:31:52Z HARVEST_SPLIT planned total=200867221645 dev_cut=66955740548 (rounding favors burn)
 2026-09-10T16:31:57Z HARVEST_SPLIT ok total=200867221645 burn=133911481098 dev=66955740547 burn_sig=51MS4vnvZMdF2avXaNjQWVVkB5ritQZF5x7Qfrk6H2bBq9pahfVScbvvSJ4hkwHc9DxnQHkjRpXFnyKN2uyMhQHt dev_sig=7C6evNZiDCQN53hBnVZfAEidd99eT38wYeUABiZvpayBUfcXFqiy57tSforouQfVdb6xzKB4iJpjE4Pb9K3bgJ3 new_supply=639731134.939782667
+2026-09-10T20:57:48Z STATE=HARVEST_SPLIT supply=639731134 floor=300000000 buffer=257602814 trigger=557602814 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-09-10T20:57:50Z HARVEST_SPLIT harvest ok withdraw_sig=2rqLDZ8AtzVxe3g36nayAZExxYk5j1dvcE99q6tqEh6oWk6bjUKn69oY4xD1duFqViwAkMPLBrs3tU7zAX9iB6Ah
+2026-09-10T20:57:50Z HARVEST_SPLIT planned total=1004336109 dev_cut=334778703 (rounding favors burn)
+2026-09-10T20:57:51Z ABORT: unexpected failure (exit 22) at line 68: jq -r '.result.value.amount // "0"'
+2026-09-10T20:57:51Z ABORT: unexpected failure (exit 22) at line 111: jq -r '.result.value.amount // "0"'
+2026-09-10T20:57:51Z ABORT: unexpected failure (exit 22) at line 111: burn_amt="$(acct_raw "$VAULT")"

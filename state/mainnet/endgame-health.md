@@ -1822,3 +1822,18 @@ off-repo (Cowork): se lee sin tocar el log crudo, el Codespace ni ningún secret
 **Detalle libre:** cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0; acumulado quemado=10268864075217334 dev=5134432037608657 (base units). Notas 🟡: split 133911481098/66955740547 no coincide con floor(total/3)=66955740548 (suma sí cuadra).
 
 ---
+
+## Endgame health — 2026-09-10T20:57:48Z
+
+**Semáforo:** 🔴
+**Run revisado:** https://github.com/AshandEmber-Sol/-ASHEM/actions/runs/34529408411
+**Harvest:** FALLO — hubo withdraw pero no se completó el split (murió a mitad)
+**Circuit breaker:** OK — sin harvest este ciclo, nada que evaluar contra el cap
+**Buffer dinámico:** 639731134 vs 557602814 (300M + buffer 257602814) — disparado: no
+**Máquina de estados:** HARVEST_SPLIT (sin cambio de estado)
+**Idempotencia:** split-inflight presente al terminar — plan de split sin cerrar
+**Indexador:** ~2 llamada(s) getProgramAccounts (derivado del estado, sin contador vivo)
+**Anomalía vs. falla de harvest conocida:** fallo no-atrapado durante la operación (post-lectura): unexpected failure (exit 22) at line 111: burn_amt="$(acct_raw "$VAULT")"
+**Detalle libre:** cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0; acumulado quemado=10268864075217334 dev=5134432037608657 (base units). HALLAZGOS 🔴: withdraw sin 'ok total=' subsiguiente: split incompleto este run;el trap ERR disparó después de iniciar el ciclo (STATE=HARVEST_SPLIT): unexpected failure (exit 22) at line 111: burn_amt="$(acct_raw "$VAULT")";endgame step outcome=failure. Notas 🟡: state/split-inflight sigue presente tras el run; próximo ciclo debe retomarlo.
+
+---
