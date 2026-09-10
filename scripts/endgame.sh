@@ -37,7 +37,7 @@
 # move, never duplicating. The burn uses the ALL keyword, so the vault always
 # drains to exactly 0. The plan (total/dev_cut) is recorded in state/.
 # =============================================================================
-set -euo pipefail
+set -Eeuo pipefail   # -E: ERR trap is inherited by functions (see trap below)
 
 MINT="${ASHEM_MINT:?export ASHEM_MINT=<mint address>}"
 VAULT="${ASHEM_VAULT:?export ASHEM_VAULT=<dedicated fee-collection token account>}"
@@ -57,6 +57,13 @@ PROOF="${PROOF_FILE:-ENDGAME.md}"
 
 mkdir -p "$STATE_DIR"
 log() { echo "$(date -u +%FT%TZ) $*" | tee -a "$LOGF"; }
+# Diagnosability: any UNCAUGHT failure (e.g. a transient RPC blip during the
+# early on-chain reads, before the first STATE log) writes a structured ABORT to
+# the public log, so the health report can classify it instead of seeing a bare
+# "failure with no ABORT/ERROR". Deliberate `log "ABORT/ERROR..."; exit 1` paths
+# below are unaffected (exit does not trigger ERR); handled failures (|| true,
+# conditions) do not trigger it either.
+trap 'rc=$?; log "ABORT: unexpected failure (exit $rc) at line ${LINENO}: ${BASH_COMMAND}"' ERR
 sig_of() { awk '/^Signature:/{print $2; exit}'; }
 acct_raw() { curl -sf "$RPC" -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"getTokenAccountBalance","params":["'"$1"'",{"commitment":"confirmed"}]}' | jq -r '.result.value.amount // "0"'; }
 raw_to_ui() { local r="$1"; printf '%d.%09d' "$(( r / UNIT ))" "$(( r % UNIT ))"; }
@@ -112,6 +119,19 @@ do_split() {
   echo "$(date -u +%FT%TZ),$total,$burn_amt,$dev_amt,$burn_sig,$dev_sig" >> "$LEDGER"
   log "$ctx ok total=$total burn=$burn_amt dev=$dev_amt burn_sig=$burn_sig dev_sig=$dev_sig new_supply=$(spl-token supply "$MINT")"
 }
+
+# ---- RPC warm-up ------------------------------------------------------------
+# Scheduled runs occasionally hit a transient RPC/network blip on the very first
+# read and die before any structured log (seen 2026-08-17, 2026-09-10: run fails
+# in ~30s with no ABORT/ERROR). Retry a cheap read up to 5x with backoff so a
+# momentary blip no longer skips a whole 6h cycle. A genuine outage still fails
+# afterward on the real reads, now caught by the ERR trap above. This is a plain
+# condition (no set -e / ERR trap), so the retries stay silent to the trap.
+for i in 1 2 3 4 5; do
+  if spl-token supply "$MINT" >/dev/null 2>&1; then break; fi
+  log "rpc warmup retry $i/5 (transient RPC/network)"
+  [[ $i -lt 5 ]] && sleep $(( i * 5 ))
+done
 
 # ---- on-chain reads ---------------------------------------------------------
 INFO="$(spl-token display "$MINT")"
