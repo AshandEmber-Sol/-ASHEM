@@ -75,7 +75,13 @@ yellow() { YELLOWS+=("$1"); }
 # ============================================================================
 HARVEST_FIELD=""
 ok_line="$(grep -E 'HARVEST_SPLIT ok total=' <<<"$RUN_LOG" | tail -1)"
-abort_line="$(grep -E 'ABORT:' <<<"$RUN_LOG" | tail -1)"
+# Two kinds of ABORT can appear. The circuit-breaker guard (endgame.sh) is a real
+# 🔴. The ERR trap's "unexpected failure at line N" is a transient early/RPC
+# failure: the guard exited before doing any work and self-recovers next cycle
+# (🟡, unless it repeats). Keep them apart so a blip is not reported as a breaker.
+cb_abort_line="$(grep -E 'ABORT:.*(exceeds .*% of supply|DEDICATED fee-only)' <<<"$RUN_LOG" | tail -1)"
+transient_abort_line="$(grep -E 'ABORT: unexpected failure' <<<"$RUN_LOG" | tail -1)"
+abort_line="$cb_abort_line"   # sections 1 & 2 below react only to the REAL breaker abort
 error_line="$(grep -E 'ERROR:' <<<"$RUN_LOG" | tail -1)"
 resume_line="$(grep -E 'resume inflight' <<<"$RUN_LOG" | tail -1)"
 
@@ -233,6 +239,24 @@ IDX_FIELD="~$IDX_N llamada(s) getProgramAccounts (derivado del estado, sin conta
 if grep -qi 'not drained' <<<"$RUN_LOG"; then
   ANOM_FIELD="recurrencia — reapareció 'vault not drained' (era el bug de dust f64 del run #37)"
   red "recurrencia de la falla conocida: vault not drained"
+elif [[ -n "$transient_abort_line" && -z "$STATE" ]]; then
+  # Early failure caught by the ERR trap, BEFORE the STATE log: the warm-up
+  # retries were exhausted and endgame.sh exited before touching anything. No
+  # invariant is at risk (nothing moved); it self-recovers next cycle. Only a
+  # 🔴 if it REPEATS — escalate when the previous entry was also transient.
+  prev_anom="$(grep '^\*\*Anomalía' "$HEALTH" 2>/dev/null | tail -1)"
+  if [[ "$prev_anom" == *transitorio* ]]; then
+    ANOM_FIELD="RECURRENTE — fallo temprano transitorio en runs consecutivos (RPC/entorno): ${transient_abort_line#*ABORT: }. Ya no es un blip aislado."
+    red "fallo temprano transitorio en 2+ runs consecutivos (ya no es un blip): ${transient_abort_line#*ABORT: }"
+  else
+    ANOM_FIELD="transitorio — fallo temprano (RPC/entorno) atrapado por el trap: ${transient_abort_line#*ABORT: }. El guard saltó el ciclo, se recupera solo en el próximo run; escalar solo si se repite."
+    yellow "fallo temprano transitorio (trap ERR): ${transient_abort_line#*ABORT: } — se recupera solo, escala a 🔴 si se repite"
+  fi
+elif [[ -n "$transient_abort_line" ]]; then
+  # Trap fired AFTER the run got past the reads (STATE present): a mid-operation
+  # failure, not a mere early blip → 🔴. Idempotency (§5) still protects funds.
+  ANOM_FIELD="fallo no-atrapado durante la operación (post-lectura): ${transient_abort_line#*ABORT: }"
+  red "el trap ERR disparó después de iniciar el ciclo (STATE=$STATE): ${transient_abort_line#*ABORT: }"
 elif [[ "$ENDGAME_OUTCOME" == "failure" && -z "$abort_line" && -z "$error_line" ]]; then
   ANOM_FIELD="nueva — el step de endgame falló sin ABORT/ERROR logueado (posible fallo temprano de RPC/entorno)"
   red "endgame step con outcome=failure sin ABORT/ERROR en el log (fallo antes de loguear)"
@@ -240,8 +264,16 @@ else
   ANOM_FIELD="N/A"
 fi
 
-# Si el endgame step falló pero no lo capturamos arriba, asegúrate del 🔴.
-[[ "$ENDGAME_OUTCOME" == "failure" ]] && red "endgame step outcome=failure"
+# El endgame step falló: normalmente 🔴 — salvo que la ÚNICA causa sea un fallo
+# temprano transitorio ya clasificado arriba (🟡 transitorio, o 🔴 recurrente con
+# su propio mensaje), donde NO se agrega un 🔴 genérico redundante.
+if [[ "$ENDGAME_OUTCOME" == "failure" ]]; then
+  if [[ -n "$transient_abort_line" && -z "$STATE" ]]; then
+    :   # ya clasificado arriba
+  else
+    red "endgame step outcome=failure"
+  fi
+fi
 
 # Si no hubo líneas nuevas y no fue IDLE esperable, marca duda.
 if [[ -z "$RUN_LOG" ]]; then
