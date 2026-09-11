@@ -65,12 +65,29 @@ log() { echo "$(date -u +%FT%TZ) $*" | tee -a "$LOGF"; }
 # conditions) do not trigger it either.
 trap 'rc=$?; log "ABORT: unexpected failure (exit $rc) at line ${LINENO}: ${BASH_COMMAND}"' ERR
 sig_of() { awk '/^Signature:/{print $2; exit}'; }
-acct_raw() { curl -sf "$RPC" -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"getTokenAccountBalance","params":["'"$1"'",{"commitment":"confirmed"}]}' | jq -r '.result.value.amount // "0"'; }
+# Transient-safe RPC GET (reads only — safe to repeat). Retries on transient curl
+# -f failures: HTTP >=400 such as a Helius rate-limit or 5xx (the exit-22 that
+# killed a split mid-way 2026-09-10) and connection hangs (bounded by --max-time).
+# Up to 5x with backoff. Diagnostics go to the log FILE, never stdout, so command
+# substitution stays clean. Returns non-zero after exhausting retries (the ERR
+# trap then surfaces it with the caller's line — same as before, just later).
+rpc_get() {  # $1 = RPC url, $2 = JSON-RPC body
+  local n=0 resp
+  while :; do
+    if resp="$(curl -sf --max-time 30 "$1" -H 'Content-Type: application/json' -d "$2")"; then
+      printf '%s' "$resp"; return 0
+    fi
+    n=$(( n + 1 )); (( n >= 5 )) && { printf '%s rpc_get: RPC read failed after %d attempts\n' "$(date -u +%FT%TZ)" "$n" >>"$LOGF"; return 1; }
+    printf '%s rpc_get retry %d/5 (transient RPC HTTP error)\n' "$(date -u +%FT%TZ)" "$n" >>"$LOGF"
+    sleep $(( n * 3 ))
+  done
+}
+acct_raw() { rpc_get "$RPC" '{"jsonrpc":"2.0","id":1,"method":"getTokenAccountBalance","params":["'"$1"'",{"commitment":"confirmed"}]}' | jq -r '.result.value.amount // "0"'; }
 raw_to_ui() { local r="$1"; printf '%d.%09d' "$(( r / UNIT ))" "$(( r % UNIT ))"; }
 
 # token accounts of this mint still holding withheld fees (jsonParsed RPC scan)
 withheld_sources() {
-  curl -sf "$INDEXER_RPC" -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"getProgramAccounts","params":["'"$TOKEN22"'",{"commitment":"confirmed","encoding":"jsonParsed","filters":[{"memcmp":{"offset":0,"bytes":"'"$MINT"'"}}]}]}' |
+  rpc_get "$INDEXER_RPC" '{"jsonrpc":"2.0","id":1,"method":"getProgramAccounts","params":["'"$TOKEN22"'",{"commitment":"confirmed","encoding":"jsonParsed","filters":[{"memcmp":{"offset":0,"bytes":"'"$MINT"'"}}]}]}' |
   jq -r '.result[] | select([.account.data.parsed.info.extensions[]? | select(.extension=="transferFeeAmount") | (.state.withheldAmount // 0 | tonumber)] | add > 0) | .pubkey'
 }
 
