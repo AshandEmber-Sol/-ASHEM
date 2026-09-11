@@ -172,3 +172,6 @@
 2026-09-10T20:57:51Z ABORT: unexpected failure (exit 22) at line 68: jq -r '.result.value.amount // "0"'
 2026-09-10T20:57:51Z ABORT: unexpected failure (exit 22) at line 111: jq -r '.result.value.amount // "0"'
 2026-09-10T20:57:51Z ABORT: unexpected failure (exit 22) at line 111: burn_amt="$(acct_raw "$VAULT")"
+2026-09-11T01:25:39Z STATE=HARVEST_SPLIT supply=639731134 floor=300000000 buffer=262500717 trigger=562500717 cur_fee=150bps up_fee=n/abps vault_raw=669557406 mint_withheld=0
+2026-09-11T01:25:39Z HARVEST_SPLIT resume inflight total=1004336109 dev_cut=334778703
+2026-09-11T01:25:43Z HARVEST_SPLIT ok total=1004336109 burn=669557406 dev=334778703 burn_sig=4H1AR6sv2YoGkbuqQJTg42NeE9aZDe55jvDM2NkkNhTHHbB7xvMzMy59CghkJAMTUVg667MNW1MfYG428jPgxxoQ dev_sig=already new_supply=639731134.270225261
