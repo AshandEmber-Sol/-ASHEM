@@ -1852,3 +1852,18 @@ off-repo (Cowork): se lee sin tocar el log crudo, el Codespace ni ningún secret
 **Detalle libre:** cur_fee=150bps up_fee=n/abps vault_raw=669557406 mint_withheld=0; acumulado quemado=10268864744774740 dev=5134432372387360 (base units). Notas 🟡: run retomó un split en vuelo (resume inflight); verificar que no duplicó ni saltó.
 
 ---
+
+## Endgame health — 2026-09-11T04:51:00Z
+
+**Semáforo:** 🟢
+**Run revisado:** https://github.com/AshandEmber-Sol/-ASHEM/actions/runs/34563713970
+**Harvest:** OK — total=35224822207 burn=23483214805 dev=11741607402 (2/3:1/3, residuo→quema); ledger +1 fila (sin duplicados)
+**Circuit breaker:** OK — el mayor harvest del ciclo fue 0.0000% del supply (cap 10%)
+**Buffer dinámico:** 639731134 vs 567896622 (300M + buffer 267896622) — disparado: no
+**Máquina de estados:** HARVEST_SPLIT (sin cambio de estado)
+**Idempotencia:** OK — sin split en vuelo, vault drenado a 0
+**Indexador:** ~2 llamada(s) getProgramAccounts (derivado del estado, sin contador vivo)
+**Anomalía vs. falla de harvest conocida:** N/A
+**Detalle libre:** cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0; acumulado quemado=10268888227989544 dev=5134444113994762 (base units).
+
+---
