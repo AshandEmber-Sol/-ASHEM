@@ -29,6 +29,7 @@ STATE_DIR="${STATE_DIR:-state}"
 LOGF="$STATE_DIR/endgame-log.txt"
 LEDGER="$STATE_DIR/harvest-ledger.csv"
 HEALTH="$STATE_DIR/endgame-health.md"
+LATEST="$STATE_DIR/endgame-latest.md"   # single-entry mirror (overwritten each run) for off-repo monitoring
 UNIT=1000000000            # 10^decimals, same as endgame.sh
 FLOOR=300000000
 
@@ -315,22 +316,40 @@ if [[ ! -f "$HEALTH" ]]; then
   } > "$HEALTH"
 fi
 
+# Build the entry ONCE, then write it to BOTH:
+#  - $HEALTH : append to the unbounded, auditable history (never overwritten)
+#  - $LATEST : overwrite a tiny single-entry mirror, so off-repo monitoring
+#              (Cowork) reads a small file that WebFetch never truncates as the
+#              full log grows (~100KB / 126 entries by 2026-09-11).
+ENTRY="$(cat <<EOF
+## Endgame health — $TS
+
+**Semáforo:** $LIGHT
+**Run revisado:** $RUN_URL
+**Harvest:** $HARVEST_FIELD
+**Circuit breaker:** $CB_FIELD
+**Buffer dinámico:** $BUF_FIELD
+**Máquina de estados:** $SM_FIELD
+**Idempotencia:** $IDEM_FIELD
+**Indexador:** $IDX_FIELD
+**Anomalía vs. falla de harvest conocida:** $ANOM_FIELD
+**Detalle libre:** $DETAIL
+EOF
+)"
+
+printf '\n%s\n\n---\n' "$ENTRY" >> "$HEALTH"
+
 {
+  echo "# \$ASHEM — Endgame health (latest run only)"
   echo
-  echo "## Endgame health — $TS"
-  echo
-  echo "**Semáforo:** $LIGHT"
-  echo "**Run revisado:** $RUN_URL"
-  echo "**Harvest:** $HARVEST_FIELD"
-  echo "**Circuit breaker:** $CB_FIELD"
-  echo "**Buffer dinámico:** $BUF_FIELD"
-  echo "**Máquina de estados:** $SM_FIELD"
-  echo "**Idempotencia:** $IDEM_FIELD"
-  echo "**Indexador:** $IDX_FIELD"
-  echo "**Anomalía vs. falla de harvest conocida:** $ANOM_FIELD"
-  echo "**Detalle libre:** $DETAIL"
+  echo "Auto-generado por \`scripts/health-report.sh\`: SOLO la última entrada, se"
+  echo "sobrescribe cada run. Puente para monitoreo off-repo (Cowork) a prueba de"
+  echo "truncamiento por tamaño; el historial completo append-only vive en"
+  echo "\`endgame-health.md\`."
   echo
   echo "---"
-} >> "$HEALTH"
+  echo
+  echo "$ENTRY"
+} > "$LATEST"
 
-echo "health-report: wrote $LIGHT entry for STATE=${STATE:-?} to $HEALTH"
+echo "health-report: wrote $LIGHT entry for STATE=${STATE:-?} to $HEALTH + $LATEST"
