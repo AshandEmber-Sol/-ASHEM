@@ -7,15 +7,15 @@ truncamiento por tamaño; el historial completo append-only vive en
 
 ---
 
-## Endgame health — 2026-09-12T10:57:16Z
+## Endgame health — 2026-09-12T15:38:02Z
 
 **Semáforo:** 🟢
-**Run revisado:** https://github.com/AshandEmber-Sol/-ASHEM/actions/runs/34689760806
-**Harvest:** OK — total=1375796732844 burn=917197821896 dev=458598910948 (2/3:1/3, residuo→quema); ledger +1 fila (sin duplicados)
-**Circuit breaker:** OK — el mayor harvest del ciclo fue 0.0002% del supply (cap 10%)
-**Buffer dinámico:** 639547671 vs 564381932 (300M + buffer 264381932) — disparado: no
+**Run revisado:** https://github.com/AshandEmber-Sol/-ASHEM/actions/runs/34702800751
+**Harvest:** OK — total=6878983665 burn=4585989110 dev=2292994555 (2/3:1/3, residuo→quema); ledger +1 fila (sin duplicados)
+**Circuit breaker:** OK — el mayor harvest del ciclo fue 0.0000% del supply (cap 10%)
+**Buffer dinámico:** 639546753 vs 565127148 (300M + buffer 265127148) — disparado: no
 **Máquina de estados:** HARVEST_SPLIT (sin cambio de estado)
 **Idempotencia:** OK — sin split en vuelo, vault drenado a 0
 **Indexador:** ~2 llamada(s) getProgramAccounts (derivado del estado, sin contador vivo)
 **Anomalía vs. falla de harvest conocida:** N/A
-**Detalle libre:** cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0; acumulado quemado=10453245108196658 dev=5226622554098317 (base units).
+**Detalle libre:** cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0; acumulado quemado=10453249694185768 dev=5226624847092872 (base units).
