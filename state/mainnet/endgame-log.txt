@@ -207,3 +207,8 @@
 2026-09-12T15:38:07Z HARVEST_SPLIT harvest ok withdraw_sig=3XovppUCduJ1uNhnf3JiP53Nmq7MKJzGEYaTLHbLd4eJ67QkfKtpdG8GBoM1WXi3AKM2hCrffqLLbShFd8g3Ddpy
 2026-09-12T15:38:07Z HARVEST_SPLIT planned total=6878983665 dev_cut=2292994555 (rounding favors burn)
 2026-09-12T15:38:10Z HARVEST_SPLIT ok total=6878983665 burn=4585989110 dev=2292994555 burn_sig=3GUBK18crAAyLgvDTZbBjqnKCf8FQfucnoMKQCWcT3AczrU9z3S1xNm45uiP8tnu9htNZXVBzuNRrytR7f36qzic dev_sig=491m4kb728hnqvRTGzW1PsMb6tDzujVxXXigf8uJBrwqiJgdvVFCGNk4xWckqWXGuSNvowjcBRix7uY1btabRnLd new_supply=639546749.320814232
+2026-09-12T20:39:57Z STATE=HARVEST_SPLIT supply=639546749 floor=300000000 buffer=270622305 trigger=570622305 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-09-12T20:39:59Z HARVEST_SPLIT harvest ok withdraw_sig=TKoqVuxrXwhG1vbhro6eHmCndB6Qhvr419GQ2hJuboPj3mmKEc9vz7FYRMYfJ4NgxqFF4AAciHGgVQ4PMoxE7gd
+2026-09-12T20:39:59Z HARVEST_SPLIT planned total=34394919 dev_cut=11464973 (rounding favors burn)
+2026-09-12T20:40:01Z ABORT: unexpected failure (exit 1) at line 130: sig_of
+2026-09-12T20:40:01Z ABORT: unexpected failure (exit 1) at line 130: burn_sig="$(spl-token burn "$VAULT" ALL | sig_of)"
