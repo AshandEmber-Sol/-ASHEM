@@ -215,3 +215,7 @@
 2026-09-13T04:58:12Z STATE=HARVEST_SPLIT supply=639546749 floor=300000000 buffer=267226929 trigger=567226929 cur_fee=150bps up_fee=n/abps vault_raw=22929946 mint_withheld=0
 2026-09-13T04:58:12Z HARVEST_SPLIT resume inflight total=34394919 dev_cut=11464973
 2026-09-13T04:58:16Z HARVEST_SPLIT ok total=34394919 burn=22929946 dev=11464973 burn_sig=618AanzmYK6V7Lqa1S4oZmcbb1sNLuX86Hnpr53wD8kDH39XdiM5MhyskSmjJTWUob33XaxRbXzScBQ2kimpouBK dev_sig=already new_supply=639546749.297884286
+2026-09-13T12:03:52Z STATE=HARVEST_SPLIT supply=639546749 floor=300000000 buffer=262941956 trigger=562941956 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-09-13T12:04:01Z HARVEST_SPLIT harvest ok withdraw_sig=27otFT1VAn3w2vx17LTTDoxvd74SefmotS3PFYCf4ytoeiDcCiQCcXrorjWx1WeqfF8T9wbgKPZUsc5s1LiY4MQz
+2026-09-13T12:04:02Z HARVEST_SPLIT planned total=171975 dev_cut=57325 (rounding favors burn)
+2026-09-13T12:04:04Z HARVEST_SPLIT ok total=171975 burn=114650 dev=57325 burn_sig=5G8tj9sMNpwUHqTPsRykuxwg5LTJtTSMCu2UhYfcA2UfyUq4xDHc2SgPHL77retUGSWGEUhbQd71xSVfVKDrc6Ws dev_sig=3WS2MvzEM4QYbFDwA7BHmzy7qqRaNCr3MszGw2xRJRVoSdFjqDcSVjAUnmZv8t8s2DXVtHhrczAnmkVihLQpYzmj new_supply=639546749.297769636
