@@ -2062,3 +2062,18 @@ off-repo (Cowork): se lee sin tocar el log crudo, el Codespace ni ningún secret
 **Detalle libre:** cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0; acumulado quemado=10453249717230944 dev=5226624858615457 (base units).
 
 ---
+
+## Endgame health — 2026-09-14T13:02:17Z
+
+**Semáforo:** 🟢
+**Run revisado:** https://github.com/AshandEmber-Sol/-ASHEM/actions/runs/34846734431
+**Harvest:** OK — sin withheld que recolectar este ciclo (IDLE)
+**Circuit breaker:** OK — sin harvest este ciclo, nada que evaluar contra el cap
+**Buffer dinámico:** 639546749 vs 307867597 (300M + buffer 7867597) — disparado: no
+**Máquina de estados:** IDLE (transición HARVEST_SPLIT→IDLE, ok)
+**Idempotencia:** OK — sin split en vuelo, vault drenado a 0
+**Indexador:** ~1 llamada(s) getProgramAccounts (derivado del estado, sin contador vivo)
+**Anomalía vs. falla de harvest conocida:** N/A
+**Detalle libre:** cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0; acumulado quemado=10453249717230944 dev=5226624858615457 (base units).
+
+---
