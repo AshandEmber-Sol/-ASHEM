@@ -238,3 +238,7 @@
 2026-09-15T11:54:25Z rpc warmup retry 2/5 (transient RPC/network)
 2026-09-15T11:54:36Z STATE=IDLE supply=639546749 floor=300000000 buffer=4167377 trigger=304167377 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
 2026-09-15T17:08:28Z STATE=IDLE supply=639546749 floor=300000000 buffer=4149413 trigger=304149413 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-09-15T21:29:52Z STATE=HARVEST_SPLIT supply=639546749 floor=300000000 buffer=4160374 trigger=304160374 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-09-15T21:30:10Z HARVEST_SPLIT harvest ok withdraw_sig=JN5H5QtHmJHuKQkS1PVCBS7butB2QMYcinbVhZMSVEg991bUV1twHCwSjz62znHwadd7mSyw5GU3WF4SRaBea4f
+2026-09-15T21:30:10Z HARVEST_SPLIT planned total=30000000000000 dev_cut=10000000000000 (rounding favors burn)
+2026-09-15T21:30:31Z HARVEST_SPLIT ok total=30000000000000 burn=20000000000000 dev=10000000000000 burn_sig=3YHQ8ezMNXtA1BkGh3Uo3TZGJFNChFHkfswB2bxosZxdiXECEgboEfX56hT5wqHNMwEczbMFKhW2GhcmEPwRMt7S dev_sig=5qEACCh1rrfJxHUd3RJSViPgWedCrAbCQ15GbhL8hWonxcp1k6KDDuSBaMV66zJttXuuj2RD18cEKsRUFqbfGDQp new_supply=639526749.297769057
