@@ -234,3 +234,6 @@
 2026-09-14T13:02:17Z STATE=IDLE supply=639546749 floor=300000000 buffer=7867597 trigger=307867597 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
 2026-09-14T21:54:33Z STATE=IDLE supply=639546749 floor=300000000 buffer=4271635 trigger=304271635 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
 2026-09-15T05:02:31Z STATE=IDLE supply=639546749 floor=300000000 buffer=4209180 trigger=304209180 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-09-15T11:53:50Z rpc warmup retry 1/5 (transient RPC/network)
+2026-09-15T11:54:25Z rpc warmup retry 2/5 (transient RPC/network)
+2026-09-15T11:54:36Z STATE=IDLE supply=639546749 floor=300000000 buffer=4167377 trigger=304167377 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
