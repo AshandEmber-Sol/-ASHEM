@@ -250,3 +250,8 @@
 2026-09-16T11:49:20Z HARVEST_SPLIT harvest ok withdraw_sig=4onj9Jci12aRUFyXpGfs5piGCPDpwtBRq8mhJsdENbRWBuRdqWWAntRUFHB3VNmt3roaAw5WAssAtLQdKow58VoQ
 2026-09-16T11:49:20Z HARVEST_SPLIT planned total=750000000 dev_cut=250000000 (rounding favors burn)
 2026-09-16T11:49:30Z HARVEST_SPLIT ok total=750000000 burn=500000000 dev=250000000 burn_sig=2Yjpr7X7t7Jz6ecu3K6J8yvq8BETS3Atb7odwgBVdzoo4azbe6JpXyhvu2AJcEvuKKBSjkfxp7w9MdWmTYsWmbGk dev_sig=QUNdL7fjEf1xySC8jH7Udjh3JzWfv6yphUGJBJu628Yk3tnEU4intKSpBxMVWrBH13W69bs9ZfvkuiZ1AVanfHq new_supply=639526648.797769057
+2026-09-16T17:07:51Z STATE=HARVEST_SPLIT supply=639526648 floor=300000000 buffer=4085586 trigger=304085586 cur_fee=150bps up_fee=n/abps vault_raw=0 mint_withheld=0
+2026-09-16T17:07:54Z HARVEST_SPLIT harvest ok withdraw_sig=3aUr6wSFkac6YTQVQ7XgXsuV7TaNxEZb59SFqNtvNxXZc9ZoyoQ67Xm4mSeSGDKVFGunVmxqjUyGr9zDfaKDMmRC
+2026-09-16T17:07:54Z HARVEST_SPLIT planned total=3750000 dev_cut=1250000 (rounding favors burn)
+2026-09-16T17:07:56Z ABORT: unexpected failure (exit 1) at line 130: sig_of
+2026-09-16T17:07:56Z ABORT: unexpected failure (exit 1) at line 130: burn_sig="$(spl-token burn "$VAULT" ALL | sig_of)"
