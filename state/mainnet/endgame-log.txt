@@ -255,3 +255,6 @@
 2026-09-16T17:07:54Z HARVEST_SPLIT planned total=3750000 dev_cut=1250000 (rounding favors burn)
 2026-09-16T17:07:56Z ABORT: unexpected failure (exit 1) at line 130: sig_of
 2026-09-16T17:07:56Z ABORT: unexpected failure (exit 1) at line 130: burn_sig="$(spl-token burn "$VAULT" ALL | sig_of)"
+2026-09-16T21:25:39Z STATE=HARVEST_SPLIT supply=639526648 floor=300000000 buffer=4177414 trigger=304177414 cur_fee=150bps up_fee=n/abps vault_raw=2500000 mint_withheld=0
+2026-09-16T21:25:39Z HARVEST_SPLIT resume inflight total=3750000 dev_cut=1250000
+2026-09-16T21:25:47Z HARVEST_SPLIT ok total=3750000 burn=2500000 dev=1250000 burn_sig=5PHfnyPjqd5VJQy6gS6meXQmuK9vA63RVUCsXUfK2Y1PjsL4pHBaXF7bchHSub1BaUmgMmvyt4UoVmYXyKTh1cSr dev_sig=already new_supply=639526648.795269057
