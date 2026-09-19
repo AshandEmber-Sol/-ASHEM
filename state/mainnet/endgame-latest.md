@@ -7,13 +7,13 @@ truncamiento por tamaño; el historial completo append-only vive en
 
 ---
 
-## Endgame health — 2026-09-19T04:45:55Z
+## Endgame health — 2026-09-19T11:11:33Z
 
 **Semáforo:** 🟢
-**Run revisado:** https://github.com/AshandEmber-Sol/-ASHEM/actions/runs/35422135322
+**Run revisado:** https://github.com/AshandEmber-Sol/-ASHEM/actions/runs/35439409977
 **Harvest:** OK — sin withheld que recolectar este ciclo (IDLE)
 **Circuit breaker:** OK — sin harvest este ciclo, nada que evaluar contra el cap
-**Buffer dinámico:** 639526648 vs 300015590 (300M + buffer 15590) — disparado: no
+**Buffer dinámico:** 639526648 vs 300014750 (300M + buffer 14750) — disparado: no
 **Máquina de estados:** IDLE (sin cambio de estado)
 **Idempotencia:** OK — sin split en vuelo, vault drenado a 0
 **Indexador:** ~1 llamada(s) getProgramAccounts (derivado del estado, sin contador vivo)
