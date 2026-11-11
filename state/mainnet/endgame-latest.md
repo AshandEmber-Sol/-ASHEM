@@ -7,10 +7,10 @@ truncamiento por tamaño; el historial completo append-only vive en
 
 ---
 
-## Endgame health — 2026-11-10T19:51:49Z
+## Endgame health — 2026-11-11T06:46:22Z
 
 **Semáforo:** 🟢
-**Run revisado:** https://github.com/AshandEmber-Sol/-ASHEM/actions/runs/42889418497
+**Run revisado:** https://github.com/AshandEmber-Sol/-ASHEM/actions/runs/42974722211
 **Harvest:** OK — sin withheld que recolectar este ciclo (IDLE)
 **Circuit breaker:** OK — sin harvest este ciclo, nada que evaluar contra el cap
 **Buffer dinámico:** 639526648 vs 307500000 (300M + buffer 7500000) — disparado: no
